@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -9,18 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
-  ArrowRight,
   TrendingUp,
   Wallet,
   Clock,
   AlertTriangle,
   FileText,
-  CheckCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -242,34 +237,8 @@ export function Step2ResultV2({ result }: Step2ResultV2Props) {
         </Alert>
       )}
 
-      <Separator className="bg-slate-200" />
-
-      {/* CTA */}
-      <Card className="border-slate-300 bg-gradient-to-r from-slate-800 to-slate-700">
-        <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-white">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-5 w-5" />
-                <h3 className="font-semibold text-lg">다음 단계</h3>
-              </div>
-              <p className="text-slate-300 text-sm">
-                재무제표를 업로드하시면 더 정확한 분석과 함께 전문 중개법인 연결을 도와드리겠습니다.
-              </p>
-            </div>
-            <Link href="/app/step3">
-              <Button size="lg" variant="secondary" className="gap-2 bg-white text-slate-800 hover:bg-slate-100">
-                재무제표 업로드
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
       <p className="text-xs text-slate-400 text-center">
-        본 분석 결과는 입력하신 정보를 기반으로 한 참고 자료이며, 
-        실제 거래 조건 및 시장 상황에 따라 달라질 수 있습니다.
+        * 아래 딜 구조 시나리오를 완료하시면 다음 단계로 진행할 수 있습니다.
       </p>
     </div>
   );

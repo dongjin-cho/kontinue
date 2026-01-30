@@ -161,7 +161,7 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          step: "step2",
+          step: "step2_cashflow",
           input: formData,
           result: result,
         }),

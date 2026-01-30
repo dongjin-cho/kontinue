@@ -161,6 +161,17 @@ export function DealScenarioForm({ step1Result, onResult }: DealScenarioFormProp
       if (typeof window !== "undefined") {
         localStorage.setItem("sme_deal_scenarios_result_v1", JSON.stringify(data.data));
       }
+
+      // Save to server (non-blocking)
+      fetch("/api/runs/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          step: "step2_deal_scenarios",
+          input: formData,
+          result: data.data,
+        }),
+      }).catch((err) => console.warn("Failed to save deal scenarios:", err));
     } catch (err) {
       console.error("Deal scenarios error:", err);
       setError(err instanceof Error ? err.message : "시나리오 생성 중 오류가 발생했습니다.");

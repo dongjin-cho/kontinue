@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { step, input, result } = body;
 
-    if (!step || !["step1", "step2"].includes(step)) {
+    if (!step || !["step1", "step2", "step2_cashflow", "step2_deal_scenarios"].includes(step)) {
       return NextResponse.json(
         { success: false, error: "Invalid step" },
         { status: 400 }
@@ -113,12 +113,24 @@ export async function POST(request: NextRequest) {
 
       return response;
     } else {
-      // Step2: 기존 run 업데이트
-      const updateData = {
-        step2_input: input,
-        step2_result: result,
-        step2_completed_at: new Date().toISOString(),
-      };
+      // Step2 또는 하위 단계: 기존 run 업데이트
+      let updateData: Record<string, unknown> = {};
+
+      if (step === "step2" || step === "step2_cashflow") {
+        // 현금흐름 분석 저장
+        updateData = {
+          step2_input: input,
+          step2_result: result,
+          step2_completed_at: new Date().toISOString(),
+        };
+      } else if (step === "step2_deal_scenarios") {
+        // 딜 구조 시나리오 저장
+        updateData = {
+          deal_scenarios_input: input,
+          deal_scenarios_result: result,
+          deal_scenarios_completed_at: new Date().toISOString(),
+        };
+      }
 
       const { error: updateError } = await serviceClient
         .from("simulation_runs")
@@ -136,7 +148,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         runId,
-        message: "Step2 saved",
+        message: `${step} saved`,
       });
     }
   } catch (error) {

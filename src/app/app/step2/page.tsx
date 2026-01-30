@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -227,8 +227,28 @@ export default function Step2Page() {
             <DealScenarioForm step1Result={step1Result} onResult={handleDealResult} />
             
             {dealResult && (
-              <div ref={dealResultRef} className="scroll-mt-20">
+              <div ref={dealResultRef} className="scroll-mt-20 space-y-6">
                 <DealScenarioResults result={dealResult} />
+                
+                {/* Step3로 이동 CTA */}
+                <Card className="bg-slate-800 text-white border-0">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-semibold mb-1">다음 단계</h3>
+                        <p className="text-sm text-slate-300">
+                          재무제표를 업로드하시면 더 정확한 분석과 전문가 연결을 지원해 드립니다.
+                        </p>
+                      </div>
+                      <Link href="/app/step3">
+                        <Button size="lg" className="bg-white text-slate-800 hover:bg-slate-100">
+                          재무제표 업로드
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </section>
