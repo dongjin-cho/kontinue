@@ -3,12 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, Loader2, Calculator, FileText } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { Step2FormV2 } from "@/components/step2/Step2FormV2";
 import { Step2ResultV2 } from "@/components/step2/Step2ResultV2";
 import { DealScenarioForm } from "@/components/deal/DealScenarioForm";
@@ -24,8 +24,8 @@ export default function Step2Page() {
   const [result, setResult] = React.useState<Step2V2Result | null>(null);
   const [dealResult, setDealResult] = React.useState<DealScenarioOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState("pv-simulation");
   const resultRef = React.useRef<HTMLDivElement>(null);
+  const dealFormRef = React.useRef<HTMLDivElement>(null);
   const dealResultRef = React.useRef<HTMLDivElement>(null);
 
   // Load Step1 result and Step2 saved result from localStorage
@@ -99,28 +99,32 @@ export default function Step2Page() {
     }, 100);
   };
 
+  const scrollToDealSection = () => {
+    dealFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
       </div>
     );
   }
 
   if (!step1Result || !step1Result.canEvaluate) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <div className="min-h-screen bg-slate-50">
         <div className="container py-12 px-4 max-w-2xl mx-auto">
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="border-red-200 bg-red-50">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Step1 결과가 필요합니다</AlertTitle>
-            <AlertDescription>
-              Step2를 진행하려면 먼저 Step1에서 기업가치 평가를 완료해주세요.
+            <AlertTitle className="text-red-800">기업가치 평가가 필요합니다</AlertTitle>
+            <AlertDescription className="text-red-700">
+              상세 분석을 진행하려면 먼저 기업가치 평가를 완료해 주십시오.
             </AlertDescription>
           </Alert>
           <div className="mt-4">
             <Link href="/app/step1">
-              <Button>Step1으로 이동</Button>
+              <Button className="bg-slate-800 hover:bg-slate-700">기업가치 평가로 이동</Button>
             </Link>
           </div>
         </div>
@@ -148,7 +152,7 @@ export default function Step2Page() {
 
       {/* Main Content */}
       <main className="container py-8 px-4 max-w-4xl mx-auto">
-        <div className="space-y-6">
+        <div className="space-y-12">
           {/* Step1 결과 요약 */}
           <Card className="border-slate-200 bg-white">
             <CardHeader className="pb-2">
@@ -171,39 +175,63 @@ export default function Step2Page() {
             </CardContent>
           </Card>
 
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
-              <TabsTrigger value="pv-simulation" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-800">
-                <Calculator className="h-4 w-4" />
-                현금흐름 분석
-              </TabsTrigger>
-              <TabsTrigger value="deal-scenarios" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-800">
-                <FileText className="h-4 w-4" />
+          {/* Section 1: 현금흐름 분석 */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-sm">
+                1
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">현금흐름 분석</h2>
+                <p className="text-sm text-slate-500">거래 조건에 따른 예상 수령액을 분석합니다</p>
+              </div>
+            </div>
+
+            <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
+            
+            {result && (
+              <div ref={resultRef} className="scroll-mt-20">
+                <Step2ResultV2 result={result} />
+              </div>
+            )}
+          </section>
+
+          {/* Divider with scroll hint */}
+          <div className="relative py-8">
+            <Separator className="bg-slate-200" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-50 px-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="rounded-full border-slate-300 text-slate-500 hover:text-slate-700"
+                onClick={scrollToDealSection}
+              >
+                <ChevronDown className="h-4 w-4 mr-1" />
                 딜 구조 시나리오
-              </TabsTrigger>
-            </TabsList>
+              </Button>
+            </div>
+          </div>
 
-            {/* Tab 1: 현금흐름 분석 */}
-            <TabsContent value="pv-simulation" className="space-y-6 mt-6">
-              <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
-              {result && (
-                <div ref={resultRef} className="scroll-mt-20">
-                  <Step2ResultV2 result={result} />
-                </div>
-              )}
-            </TabsContent>
+          {/* Section 2: 딜 구조 시나리오 */}
+          <section ref={dealFormRef} className="space-y-6 scroll-mt-20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-sm">
+                2
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">딜 구조 시나리오</h2>
+                <p className="text-sm text-slate-500">다양한 거래 구조별 예상 수령액을 비교합니다</p>
+              </div>
+            </div>
 
-            {/* Tab 2: 딜 구조 시나리오 */}
-            <TabsContent value="deal-scenarios" className="space-y-6 mt-6">
-              <DealScenarioForm step1Result={step1Result} onResult={handleDealResult} />
-              {dealResult && (
-                <div ref={dealResultRef} className="scroll-mt-20">
-                  <DealScenarioResults result={dealResult} />
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+            <DealScenarioForm step1Result={step1Result} onResult={handleDealResult} />
+            
+            {dealResult && (
+              <div ref={dealResultRef} className="scroll-mt-20">
+                <DealScenarioResults result={dealResult} />
+              </div>
+            )}
+          </section>
         </div>
       </main>
 
