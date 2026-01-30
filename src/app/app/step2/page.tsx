@@ -129,64 +129,62 @@ export default function Step2Page() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="container flex h-14 items-center">
           <Link href="/app/step1">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-slate-800">
               <ArrowLeft className="h-4 w-4" />
-              Step 1
+              이전 단계
             </Button>
           </Link>
           <div className="flex-1 text-center">
-            <span className="font-semibold">Step 2: 현금흐름 시뮬레이션</span>
+            <span className="font-semibold text-slate-800">상세 분석</span>
           </div>
           <div className="w-20" />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container py-6 px-4 max-w-4xl mx-auto">
+      <main className="container py-8 px-4 max-w-4xl mx-auto">
         <div className="space-y-6">
           {/* Step1 결과 요약 */}
-          <Card className="border-primary/20 bg-primary/5">
+          <Card className="border-slate-200 bg-white">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription>Step 1 평가 결과</CardDescription>
-                <Badge variant="secondary">{step1Result.industryGroup}</Badge>
+                <CardDescription className="text-slate-500">기업가치 평가 결과</CardDescription>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-600">{step1Result.industryGroup}</Badge>
               </div>
-              <CardTitle className="text-lg">
-                예상 지분가치: {formatKRWBillions(step1Result.equityValue.low)} ~{" "}
-                {formatKRWBillions(step1Result.equityValue.high)} 원
+              <CardTitle className="text-lg text-slate-800">
+                예상 지분가치: {formatKRWBillions(step1Result.equityValue.low)} ~ {formatKRWBillions(step1Result.equityValue.high)}
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
+            <CardContent className="text-sm text-slate-500">
               <div className="flex flex-wrap gap-4">
                 <span>
-                  EV: {formatKRWBillions(step1Result.enterpriseValue.rangeLow)} ~{" "}
-                  {formatKRWBillions(step1Result.enterpriseValue.rangeHigh)}
+                  기업가치: {formatKRWBillions(step1Result.enterpriseValue.rangeLow)} ~ {formatKRWBillions(step1Result.enterpriseValue.rangeHigh)}
                 </span>
                 <span>순차입금: {formatKRWBillions(step1Result.netDebt)}</span>
-                <span>멀티플: {step1Result.multiples.finalMedian.toFixed(1)}x</span>
+                <span>적용 멀티플: {step1Result.multiples.finalMedian.toFixed(1)}x</span>
               </div>
             </CardContent>
           </Card>
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pv-simulation" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+              <TabsTrigger value="pv-simulation" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-800">
                 <Calculator className="h-4 w-4" />
-                락인/지급구조 (PV)
+                현금흐름 분석
               </TabsTrigger>
-              <TabsTrigger value="deal-scenarios" className="flex items-center gap-2">
+              <TabsTrigger value="deal-scenarios" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-slate-800">
                 <FileText className="h-4 w-4" />
                 딜 구조 시나리오
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: 기존 Step2 V2 */}
+            {/* Tab 1: 현금흐름 분석 */}
             <TabsContent value="pv-simulation" className="space-y-6 mt-6">
               <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
               {result && (
@@ -210,10 +208,10 @@ export default function Step2Page() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-12">
-        <div className="container py-6 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-slate-200 mt-12 bg-white">
+        <div className="container py-6 text-center text-sm text-slate-400">
           <p>
-            본 시뮬레이션은 참고용이며, 실제 거래 조건에 따라 달라질 수 있습니다.
+            본 분석 결과는 참고 자료이며, 실제 거래 조건에 따라 달라질 수 있습니다.
           </p>
         </div>
       </footer>

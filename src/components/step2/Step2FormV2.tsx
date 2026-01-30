@@ -13,21 +13,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
-  Calculator,
+  Briefcase,
   Loader2,
   AlertTriangle,
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  Settings2,
 } from "lucide-react";
 import { useLocalStorage } from "@/lib/hooks/useLocalStorage";
 import type { Step1Result } from "@/lib/valuation/types";
-import type { Step2V2Result, EscrowScheduleItem, EarnoutScheduleItem } from "@/lib/simulations/types_v2";
+import type { Step2V2Result } from "@/lib/simulations/types_v2";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 import { cn } from "@/lib/utils";
 
@@ -39,32 +33,15 @@ interface Step2FormV2Props {
 interface FormData {
   valuationBasis: "low" | "mid" | "high";
   lockInYears: 1 | 3 | 5;
-  equityScenarios: number[];
-  upfrontPct: number;
-  escrowPct: number;
-  earnoutPct: number;
+  equityPct: number;
   discountRate: number;
-  // 고급 옵션
-  escrowScheduleMode: "lump_sum_end" | "equal_annual" | "custom";
-  escrowProbability: number;
-  escrowSchedule: EscrowScheduleItem[];
-  earnoutScheduleMode: "equal_annual" | "custom";
-  earnoutSchedule: EarnoutScheduleItem[];
 }
 
 const DEFAULT_FORM: FormData = {
   valuationBasis: "mid",
   lockInYears: 3,
-  equityScenarios: [20, 50, 80, 100],
-  upfrontPct: 50,
-  escrowPct: 30,
-  earnoutPct: 20,
+  equityPct: 100,
   discountRate: 0.12,
-  escrowScheduleMode: "lump_sum_end",
-  escrowProbability: 0.9,
-  escrowSchedule: [],
-  earnoutScheduleMode: "equal_annual",
-  earnoutSchedule: [],
 };
 
 export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
@@ -79,9 +56,9 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
       setInitialized(true);
     }
   }, [draft, initialized]);
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   // draft 저장
   React.useEffect(() => {
@@ -98,70 +75,12 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
     }
   };
 
-  // 지급구조 합계 검증
-  const payoutSum = formData.upfrontPct + formData.escrowPct + formData.earnoutPct;
-  const isPayoutValid = Math.abs(payoutSum - 100) < 0.01;
-
-  // 스케줄 업데이트
-  const updateEscrowSchedule = (lockInYears: number) => {
-    if (formData.escrowScheduleMode === "custom") {
-      // custom은 유지
-      return;
-    }
-    // 기본 스케줄 재생성
-    setFormData((prev) => ({
-      ...prev,
-      escrowSchedule: [],
-    }));
-  };
-
-  const updateEarnoutSchedule = (lockInYears: number) => {
-    if (formData.earnoutScheduleMode === "custom") {
-      return;
-    }
-    setFormData((prev) => ({
-      ...prev,
-      earnoutSchedule: [],
-    }));
-  };
-
-  // 시나리오 추가/삭제
-  const addScenario = () => {
-    if (formData.equityScenarios.length < 10) {
-      const lastValue = formData.equityScenarios[formData.equityScenarios.length - 1] || 0;
-      const newValue = Math.min(lastValue + 10, 100);
-      setFormData((prev) => ({
-        ...prev,
-        equityScenarios: [...prev.equityScenarios, newValue],
-      }));
-    }
-  };
-
-  const removeScenario = (index: number) => {
-    if (formData.equityScenarios.length > 1) {
-      setFormData((prev) => ({
-        ...prev,
-        equityScenarios: prev.equityScenarios.filter((_, i) => i !== index),
-      }));
-    }
-  };
-
-  const updateScenario = (index: number, value: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      equityScenarios: prev.equityScenarios.map((v, i) => (i === index ? value : v)),
-    }));
-  };
+  // 예상 수령액 계산
+  const estimatedProceeds = getEquityBasisValue() * (formData.equityPct / 100);
 
   // 폼 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isPayoutValid) {
-      setError("지급 구조의 합계가 100%여야 합니다.");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
@@ -170,26 +89,16 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
         equity_basis_value: getEquityBasisValue(),
         valuation_basis: formData.valuationBasis,
         lock_in_years: formData.lockInYears,
-        equity_scenarios: formData.equityScenarios,
+        equity_scenarios: [formData.equityPct],
         payout: {
-          upfront_pct: formData.upfrontPct,
-          escrow_pct: formData.escrowPct,
-          earnout_pct: formData.earnoutPct,
+          upfront_pct: 100,
+          escrow_pct: 0,
+          earnout_pct: 0,
         },
         discount_rate: formData.discountRate,
-        escrow_schedule_mode: formData.escrowScheduleMode,
-        escrow_probability: formData.escrowProbability,
-        escrow_schedule: formData.escrowScheduleMode === "custom" ? formData.escrowSchedule.map((s) => ({
-          year: s.year,
-          pct_of_total: s.pctOfTotal,
-          probability: s.probability,
-        })) : undefined,
-        earnout_schedule_mode: formData.earnoutScheduleMode,
-        earnout_schedule: formData.earnoutScheduleMode === "custom" ? formData.earnoutSchedule.map((s) => ({
-          year: s.year,
-          pct_of_total: s.pctOfTotal,
-          probability: s.probability,
-        })) : undefined,
+        escrow_schedule_mode: "lump_sum_end",
+        escrow_probability: 1.0,
+        earnout_schedule_mode: "equal_annual",
       };
 
       const response = await fetch("/api/simulate/step2-v2", {
@@ -201,7 +110,7 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
       const data = await response.json();
 
       if (!data.success) {
-        throw new Error(data.errors?.[0]?.message || "시뮬레이션 실패");
+        throw new Error(data.errors?.[0]?.message || "분석 실패");
       }
 
       // API 응답 → 내부 타입 변환
@@ -212,12 +121,20 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
           lockInYears: data.data.basis.lock_in_years,
           discountRate: data.data.basis.discount_rate,
           payout: {
-            upfrontPct: data.data.basis.payout.upfront_pct,
-            escrowPct: data.data.basis.payout.escrow_pct,
-            earnoutPct: data.data.basis.payout.earnout_pct,
+            upfrontPct: 100,
+            escrowPct: 0,
+            earnoutPct: 0,
           },
         },
-        inputsEcho: formData as unknown as Step2V2Result["inputsEcho"],
+        inputsEcho: {
+          valuationBasis: formData.valuationBasis,
+          lockInYears: formData.lockInYears,
+          equityScenarios: [formData.equityPct],
+          upfrontPct: 100,
+          escrowPct: 0,
+          earnoutPct: 0,
+          discountRate: formData.discountRate,
+        } as Step2V2Result["inputsEcho"],
         scenarios: data.data.scenarios.map((s: Record<string, unknown>) => ({
           equityPct: s.equity_pct,
           totalProceeds: s.total_proceeds,
@@ -245,34 +162,43 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
       }).catch((err) => console.warn("Failed to save run:", err));
     } catch (err) {
       console.error("Step2 V2 error:", err);
-      setError(err instanceof Error ? err.message : "시뮬레이션 중 오류가 발생했습니다.");
+      setError(err instanceof Error ? err.message : "분석 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const basisLabels = {
+    low: "보수적",
+    mid: "기준",
+    high: "낙관적",
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="h-5 w-5" />
-          시뮬레이션 설정
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-slate-800">
+          <Briefcase className="h-5 w-5 text-slate-600" />
+          현금흐름 분석
         </CardTitle>
-        <CardDescription>
-          락인 기간, 지분 시나리오, 지급 구조를 설정하세요.
+        <CardDescription className="text-slate-500">
+          거래 조건에 따른 예상 수령액을 분석해 드리겠습니다.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* 기준 가격 선택 */}
           <div className="space-y-3">
-            <Label>기준 가격</Label>
+            <Label className="text-slate-700 font-medium">기업가치 기준</Label>
+            <p className="text-sm text-slate-500 mb-3">
+              분석의 기준이 될 기업가치를 선택해 주십시오.
+            </p>
             <RadioGroup
               value={formData.valuationBasis}
               onValueChange={(v) =>
                 setFormData((prev) => ({ ...prev, valuationBasis: v as "low" | "mid" | "high" }))
               }
-              className="grid grid-cols-3 gap-2"
+              className="grid grid-cols-3 gap-3"
             >
               {(["low", "mid", "high"] as const).map((basis) => {
                 const value =
@@ -287,12 +213,13 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
                     <Label
                       htmlFor={`basis-${basis}`}
                       className={cn(
-                        "flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 cursor-pointer",
-                        "hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                        "flex flex-col items-center justify-center rounded-lg border-2 border-slate-200 bg-white p-4 cursor-pointer transition-all",
+                        "hover:border-slate-300 hover:bg-slate-50",
+                        "peer-data-[state=checked]:border-slate-800 peer-data-[state=checked]:bg-slate-50"
                       )}
                     >
-                      <span className="text-xs text-muted-foreground capitalize">{basis}</span>
-                      <span className="font-medium">{formatKRWBillions(value)}</span>
+                      <span className="text-xs text-slate-500 mb-1">{basisLabels[basis]}</span>
+                      <span className="font-semibold text-slate-800">{formatKRWBillions(value)}</span>
                     </Label>
                   </div>
                 );
@@ -302,19 +229,20 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
 
           {/* Lock-in 기간 */}
           <div className="space-y-3">
-            <Label className="inline-flex items-center">
-              Lock-in 기간
+            <Label className="text-slate-700 font-medium inline-flex items-center">
+              경영 참여 기간
               <InfoTooltip term="Lock-in" />
             </Label>
+            <p className="text-sm text-slate-500 mb-3">
+              인수 후 경영에 참여하실 예상 기간을 선택해 주십시오.
+            </p>
             <RadioGroup
               value={String(formData.lockInYears)}
               onValueChange={(v) => {
                 const years = Number(v) as 1 | 3 | 5;
                 setFormData((prev) => ({ ...prev, lockInYears: years }));
-                updateEscrowSchedule(years);
-                updateEarnoutSchedule(years);
               }}
-              className="grid grid-cols-3 gap-2"
+              className="grid grid-cols-3 gap-3"
             >
               {[1, 3, 5].map((y) => (
                 <div key={y}>
@@ -322,118 +250,52 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
                   <Label
                     htmlFor={`lock-${y}`}
                     className={cn(
-                      "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-3 cursor-pointer",
-                      "hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary"
+                      "flex items-center justify-center rounded-lg border-2 border-slate-200 bg-white p-4 cursor-pointer transition-all",
+                      "hover:border-slate-300 hover:bg-slate-50",
+                      "peer-data-[state=checked]:border-slate-800 peer-data-[state=checked]:bg-slate-50"
                     )}
                   >
-                    {y}년
+                    <span className="font-semibold text-slate-800">{y}년</span>
                   </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
 
-          {/* 지분 시나리오 */}
+          {/* 지분 매각 비율 */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>지분 시나리오 (%)</Label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={addScenario}
-                disabled={formData.equityScenarios.length >= 10}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                추가
-              </Button>
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {formData.equityScenarios.map((value, index) => (
-                <div key={index} className="relative">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={value}
-                    onChange={(e) => updateScenario(index, Number(e.target.value))}
-                    className="pr-8"
-                  />
-                  {formData.equityScenarios.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => removeScenario(index)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 지급 구조 */}
-          <div className="space-y-4">
-            <Label>지급 구조 (합계 100%)</Label>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">즉시 지급 (%)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={formData.upfrontPct}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, upfrontPct: Number(e.target.value) }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground inline-flex items-center">
-                  Escrow (%)
-                  <InfoTooltip term="Escrow" />
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={formData.escrowPct}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, escrowPct: Number(e.target.value) }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Earn-out (%)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={formData.earnoutPct}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, earnoutPct: Number(e.target.value) }))
-                  }
+            <Label className="text-slate-700 font-medium">매각 예정 지분율</Label>
+            <p className="text-sm text-slate-500 mb-3">
+              보유 지분 중 매각을 고려하시는 비율을 입력해 주십시오.
+            </p>
+            <div className="flex items-center gap-4">
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={formData.equityPct}
+                onChange={(e) => setFormData((prev) => ({ ...prev, equityPct: Number(e.target.value) }))}
+                className="w-24 text-center border-slate-200"
+              />
+              <span className="text-slate-600">%</span>
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-slate-700 transition-all"
+                  style={{ width: `${formData.equityPct}%` }}
                 />
               </div>
             </div>
-            {!isPayoutValid && (
-              <p className="text-sm text-destructive">
-                현재 합계: {payoutSum.toFixed(1)}% (100%여야 함)
-              </p>
-            )}
           </div>
 
           {/* 할인율 */}
-          <div className="space-y-2">
-            <Label className="inline-flex items-center">
-              할인율
+          <div className="space-y-3">
+            <Label className="text-slate-700 font-medium inline-flex items-center">
+              적용 할인율
               <InfoTooltip term="할인율" />
             </Label>
+            <p className="text-sm text-slate-500 mb-3">
+              미래 현금흐름의 현재가치 산정에 적용할 할인율입니다.
+            </p>
             <div className="flex items-center gap-4">
               <input
                 type="range"
@@ -443,169 +305,30 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, discountRate: Number(e.target.value) / 100 }))
                 }
-                className="flex-1"
+                className="flex-1 accent-slate-700"
               />
-              <span className="w-16 text-center font-medium">
+              <span className="w-16 text-center font-semibold text-slate-800">
                 {(formData.discountRate * 100).toFixed(0)}%
               </span>
             </div>
           </div>
 
-          <Separator />
-
-          {/* 고급 옵션 토글 */}
-          <div>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full justify-between"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              <span className="flex items-center gap-2">
-                <Settings2 className="h-4 w-4" />
-                고급 옵션 (지급 스케줄/확률)
+          {/* 예상 수령액 미리보기 */}
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-600">예상 거래 금액</span>
+              <span className="text-xl font-bold text-slate-800">
+                {formatKRWBillions(estimatedProceeds)}
               </span>
-              {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-
-            {showAdvanced && (
-              <div className="mt-4 space-y-6 p-4 border rounded-lg bg-muted/30">
-                {/* Escrow 설정 */}
-                <div className="space-y-3">
-                  <Label className="inline-flex items-center">
-                    Escrow 지급 방식
-                    <InfoTooltip term="Escrow" />
-                  </Label>
-                  <RadioGroup
-                    value={formData.escrowScheduleMode}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        escrowScheduleMode: v as "lump_sum_end" | "equal_annual" | "custom",
-                      }))
-                    }
-                    className="grid grid-cols-3 gap-2"
-                  >
-                    <div>
-                      <RadioGroupItem value="lump_sum_end" id="escrow-lump" className="peer sr-only" />
-                      <Label
-                        htmlFor="escrow-lump"
-                        className={cn(
-                          "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 cursor-pointer text-xs",
-                          "hover:bg-accent peer-data-[state=checked]:border-primary"
-                        )}
-                      >
-                        종료 시 일괄
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="equal_annual" id="escrow-equal" className="peer sr-only" />
-                      <Label
-                        htmlFor="escrow-equal"
-                        className={cn(
-                          "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 cursor-pointer text-xs",
-                          "hover:bg-accent peer-data-[state=checked]:border-primary"
-                        )}
-                      >
-                        연차별 균등
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="custom" id="escrow-custom" className="peer sr-only" />
-                      <Label
-                        htmlFor="escrow-custom"
-                        className={cn(
-                          "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 cursor-pointer text-xs",
-                          "hover:bg-accent peer-data-[state=checked]:border-primary"
-                        )}
-                      >
-                        커스텀
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Escrow 달성 확률</Label>
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={formData.escrowProbability * 100}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            escrowProbability: Number(e.target.value) / 100,
-                          }))
-                        }
-                        className="flex-1"
-                      />
-                      <span className="w-12 text-center text-sm">
-                        {(formData.escrowProbability * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Earnout 설정 */}
-                <div className="space-y-3">
-                  <Label className="inline-flex items-center">
-                    Earn-out 지급 방식
-                    <InfoTooltip term="Earnout" />
-                  </Label>
-                  <RadioGroup
-                    value={formData.earnoutScheduleMode}
-                    onValueChange={(v) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        earnoutScheduleMode: v as "equal_annual" | "custom",
-                      }))
-                    }
-                    className="grid grid-cols-2 gap-2"
-                  >
-                    <div>
-                      <RadioGroupItem value="equal_annual" id="earnout-equal" className="peer sr-only" />
-                      <Label
-                        htmlFor="earnout-equal"
-                        className={cn(
-                          "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 cursor-pointer text-xs",
-                          "hover:bg-accent peer-data-[state=checked]:border-primary"
-                        )}
-                      >
-                        연차별 균등 (확률 60%)
-                      </Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="custom" id="earnout-custom" className="peer sr-only" />
-                      <Label
-                        htmlFor="earnout-custom"
-                        className={cn(
-                          "flex items-center justify-center rounded-md border-2 border-muted bg-popover p-2 cursor-pointer text-xs",
-                          "hover:bg-accent peer-data-[state=checked]:border-primary"
-                        )}
-                      >
-                        커스텀
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {/* 커스텀 스케줄 편집 (향후 구현) */}
-                {(formData.escrowScheduleMode === "custom" || formData.earnoutScheduleMode === "custom") && (
-                  <Alert>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      커스텀 스케줄 편집은 추후 지원 예정입니다. 현재는 기본값이 적용됩니다.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            )}
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              * {basisLabels[formData.valuationBasis]} 기준, 지분 {formData.equityPct}% 매각 시
+            </p>
           </div>
 
           {/* 에러 */}
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="border-red-200 bg-red-50">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
@@ -615,21 +338,25 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
           <Button
             type="submit"
             size="lg"
-            className="w-full"
-            disabled={isLoading || !isPayoutValid}
+            className="w-full bg-slate-800 hover:bg-slate-700 text-white"
+            disabled={isLoading}
           >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                시뮬레이션 중...
+                분석 진행 중...
               </>
             ) : (
               <>
-                <Calculator className="mr-2 h-4 w-4" />
-                시뮬레이션 실행
+                <Briefcase className="mr-2 h-4 w-4" />
+                현금흐름 분석
               </>
             )}
           </Button>
+
+          <p className="text-xs text-slate-400 text-center">
+            본 분석 결과는 참고 자료이며, 실제 거래 조건에 따라 달라질 수 있습니다.
+          </p>
         </form>
       </CardContent>
     </Card>
