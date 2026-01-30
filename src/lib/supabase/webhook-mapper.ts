@@ -88,7 +88,7 @@ export function mapExternalParserResponse(
 
   // 이미 kr-fin-v1 형식인지 체크
   if (rawExtracted.schema_version === "kr-fin-v1") {
-    return { data: rawExtracted as ExtractedFinancialData, warnings: [] };
+    return { data: rawExtracted as unknown as ExtractedFinancialData, warnings: [] };
   }
 
   // 레거시 단순 형식인지 체크 (revenue, ebitda 등 직접 필드)
