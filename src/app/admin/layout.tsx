@@ -33,6 +33,9 @@ export default async function AdminLayout({
               <a href="/admin/leads" className="hover:text-primary">
                 Leads
               </a>
+              <a href="/admin/knowledge" className="hover:text-primary">
+                Knowledge
+              </a>
             </nav>
           </div>
           <a href="/" className="text-sm text-muted-foreground hover:text-primary">
