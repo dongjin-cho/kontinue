@@ -217,7 +217,7 @@ export function ExtractedFormV2({ document, onVerified }: ExtractedFormV2Props) 
       onVerified({
         ...document,
         status: "verified",
-        verified_json: verifiedData,
+        verified_json: verifiedData as unknown as Record<string, unknown>,
         selected_period_id: selectedPeriod,
       });
     } catch (err) {
