@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   ArrowRight,
   Building2,
@@ -62,7 +65,10 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <ChartBar className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-lg">EV/EBITDA 멀티플</CardTitle>
+                <CardTitle className="text-lg inline-flex items-center">
+                  EV/EBITDA 멀티플
+                  <InfoTooltip term="EV/EBITDA" />
+                </CardTitle>
                 <CardDescription>
                   산업별 거래 사례 기반의 시장 배수를 적용하여 상대가치를 산출합니다.
                 </CardDescription>
@@ -86,7 +92,10 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                   <Shield className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-lg">DLOM 적용</CardTitle>
+                <CardTitle className="text-lg inline-flex items-center">
+                  DLOM 적용
+                  <InfoTooltip term="DLOM" />
+                </CardTitle>
                 <CardDescription>
                   비상장 기업의 유동성 부족에 대한 할인(DLOM)을 반영하여 현실적인 가치를 제시합니다.
                 </CardDescription>

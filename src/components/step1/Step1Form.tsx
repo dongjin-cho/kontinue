@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { AlertTriangle, Calculator, Loader2 } from "lucide-react";
 import { IndustrySelect } from "./IndustrySelect";
 import { CurrencyInput } from "./CurrencyInput";
@@ -314,7 +315,12 @@ export function Step1Form({ onResult }: Step1FormProps) {
 
             <CurrencyInput
               id="revenue"
-              label="최근 연 매출액"
+              label={
+                <span className="inline-flex items-center">
+                  최근 연 매출액
+                  <InfoTooltip term="매출액" />
+                </span>
+              }
               value={formData.revenue}
               onChange={(value) => updateField("revenue", value)}
               placeholder="예: 5,000,000,000"
@@ -324,8 +330,9 @@ export function Step1Form({ onResult }: Step1FormProps) {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">
-                  EBITDA / 영업이익 <span className="text-destructive">*</span>
+                <Label className="text-sm font-medium inline-flex items-center">
+                  EBITDA / 영업이익 <span className="text-destructive ml-1">*</span>
+                  <InfoTooltip term="EBITDA" />
                 </Label>
                 <RadioGroup
                   value={formData.ebitdaType}
@@ -367,8 +374,9 @@ export function Step1Form({ onResult }: Step1FormProps) {
             />
 
             <div className="space-y-2">
-              <Label htmlFor="revenueGrowth" className="text-sm font-medium">
-                매출 성장률 (전년 대비) <span className="text-destructive">*</span>
+              <Label htmlFor="revenueGrowth" className="text-sm font-medium inline-flex items-center">
+                매출 성장률 (전년 대비) <span className="text-destructive ml-1">*</span>
+                <InfoTooltip term="매출 성장률" />
               </Label>
               <div className="relative">
                 <Input
@@ -395,8 +403,9 @@ export function Step1Form({ onResult }: Step1FormProps) {
 
           {/* 부채 및 현금 */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide inline-flex items-center">
               부채 및 현금
+              <InfoTooltip term="순부채" />
             </h3>
 
             <CurrencyInput

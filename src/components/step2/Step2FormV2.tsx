@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   Calculator,
   Loader2,
@@ -301,7 +302,10 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
 
           {/* Lock-in 기간 */}
           <div className="space-y-3">
-            <Label>Lock-in 기간</Label>
+            <Label className="inline-flex items-center">
+              Lock-in 기간
+              <InfoTooltip term="Lock-in" />
+            </Label>
             <RadioGroup
               value={String(formData.lockInYears)}
               onValueChange={(v) => {
@@ -390,7 +394,10 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Escrow (%)</Label>
+                <Label className="text-xs text-muted-foreground inline-flex items-center">
+                  Escrow (%)
+                  <InfoTooltip term="Escrow" />
+                </Label>
                 <Input
                   type="number"
                   min={0}
@@ -423,7 +430,10 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
 
           {/* 할인율 */}
           <div className="space-y-2">
-            <Label>할인율</Label>
+            <Label className="inline-flex items-center">
+              할인율
+              <InfoTooltip term="할인율" />
+            </Label>
             <div className="flex items-center gap-4">
               <input
                 type="range"
@@ -462,7 +472,10 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
               <div className="mt-4 space-y-6 p-4 border rounded-lg bg-muted/30">
                 {/* Escrow 설정 */}
                 <div className="space-y-3">
-                  <Label>Escrow 지급 방식</Label>
+                  <Label className="inline-flex items-center">
+                    Escrow 지급 방식
+                    <InfoTooltip term="Escrow" />
+                  </Label>
                   <RadioGroup
                     value={formData.escrowScheduleMode}
                     onValueChange={(v) =>
@@ -536,7 +549,10 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
 
                 {/* Earnout 설정 */}
                 <div className="space-y-3">
-                  <Label>Earn-out 지급 방식</Label>
+                  <Label className="inline-flex items-center">
+                    Earn-out 지급 방식
+                    <InfoTooltip term="Earnout" />
+                  </Label>
                   <RadioGroup
                     value={formData.earnoutScheduleMode}
                     onValueChange={(v) =>

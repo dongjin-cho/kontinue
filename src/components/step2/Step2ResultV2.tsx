@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import {
   ArrowRight,
   TrendingUp,
@@ -140,7 +141,10 @@ export function Step2ResultV2({ result }: Step2ResultV2Props) {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-primary mb-2">
                 <TrendingUp className="h-5 w-5" />
-                <span className="font-medium">현재가치 (PV)</span>
+                <span className="font-medium inline-flex items-center">
+                  현재가치 (PV)
+                  <InfoTooltip term="현재가치" />
+                </span>
               </div>
               <p className="text-2xl font-bold">
                 {formatKRWBillions(selectedCaseData.pv)}

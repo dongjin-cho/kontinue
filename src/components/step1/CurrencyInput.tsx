@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface CurrencyInputProps {
   id: string;
-  label: string;
+  label: React.ReactNode;
   value: number;
   onChange: (value: number) => void;
   placeholder?: string;
