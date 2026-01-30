@@ -239,7 +239,7 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
                 <XAxis type="number" tickFormatter={(v) => `${v}억`} />
                 <YAxis dataKey="name" type="category" width={80} />
                 <Tooltip
-                  formatter={(value: number) => [`${value}억 원`, "기대 순수익"]}
+                  formatter={(value) => [`${Number(value)}억 원`, "기대 순수익"]}
                 />
                 <Bar dataKey="기대 순수익" radius={[0, 4, 4, 0]}>
                   {comparisonData.map((entry, index) => (
@@ -268,7 +268,7 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis tickFormatter={(v) => `${v}억`} />
-                <Tooltip formatter={(value: number) => [`${value}억 원`]} />
+                <Tooltip formatter={(value) => [`${Number(value)}억 원`]} />
                 <Legend />
                 <Bar dataKey="즉시현금" stackId="a" fill={CHART_COLORS.immediateCash} name="즉시 현금" />
                 <Bar dataKey="지연현금" stackId="a" fill={CHART_COLORS.deferredCash} name="지연 현금" />
