@@ -231,6 +231,17 @@ export function Step2FormV2({ step1Result, onResult }: Step2FormV2Props) {
       };
 
       onResult(result);
+      
+      // Save to server (non-blocking)
+      fetch("/api/runs/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          step: "step2",
+          input: formData,
+          result: result,
+        }),
+      }).catch((err) => console.warn("Failed to save run:", err));
     } catch (err) {
       console.error("Step2 V2 error:", err);
       setError(err instanceof Error ? err.message : "시뮬레이션 중 오류가 발생했습니다.");

@@ -177,6 +177,16 @@ export function Step1Form({ onResult }: Step1FormProps) {
         if (typeof window !== "undefined") {
           localStorage.setItem("sme_step1_result", JSON.stringify(data.data));
         }
+        // Save to server (non-blocking)
+        fetch("/api/runs/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            step: "step1",
+            input: formData,
+            result: data.data,
+          }),
+        }).catch((err) => console.warn("Failed to save run:", err));
       } else {
         // Handle API errors
         const apiErrors: Record<string, string> = {};
