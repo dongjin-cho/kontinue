@@ -24,11 +24,23 @@ export default async function AdminRunsPage({
 
   const supabase = createAdminClient();
 
-  const { data: runs, count } = await supabase
-    .from("simulation_runs")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(offset, offset + pageSize - 1);
+  let runs: Record<string, unknown>[] = [];
+  let count = 0;
+  let error = null;
+
+  try {
+    const result = await supabase
+      .from("simulation_runs")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    
+    runs = result.data || [];
+    count = result.count || 0;
+    error = result.error;
+  } catch (e) {
+    console.error("Runs query error:", e);
+  }
 
   const totalPages = Math.ceil((count || 0) / pageSize);
 

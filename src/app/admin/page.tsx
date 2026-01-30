@@ -1,67 +1,86 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, FileText, Users, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 async function getDashboardStats() {
-  const supabase = createAdminClient();
+  try {
+    const supabase = createAdminClient();
 
-  // 총 런 수
-  const { count: totalRuns } = await supabase
-    .from("simulation_runs")
-    .select("*", { count: "exact", head: true });
+    // 총 런 수
+    const { count: totalRuns, error: runsError } = await supabase
+      .from("simulation_runs")
+      .select("*", { count: "exact", head: true });
 
-  // 최근 7일 런 수
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const { count: recentRuns } = await supabase
-    .from("simulation_runs")
-    .select("*", { count: "exact", head: true })
-    .gte("created_at", sevenDaysAgo.toISOString());
+    if (runsError) {
+      console.error("Runs query error:", runsError);
+    }
 
-  // Step별 완료 수
-  const { count: step1Completed } = await supabase
-    .from("simulation_runs")
-    .select("*", { count: "exact", head: true })
-    .not("step1_completed_at", "is", null);
+    // 최근 7일 런 수
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const { count: recentRuns } = await supabase
+      .from("simulation_runs")
+      .select("*", { count: "exact", head: true })
+      .gte("created_at", sevenDaysAgo.toISOString());
 
-  const { count: step2Completed } = await supabase
-    .from("simulation_runs")
-    .select("*", { count: "exact", head: true })
-    .not("step2_completed_at", "is", null);
+    // Step별 완료 수
+    const { count: step1Completed } = await supabase
+      .from("simulation_runs")
+      .select("*", { count: "exact", head: true })
+      .not("step1_completed_at", "is", null);
 
-  // 문서 통계
-  const { count: totalDocs } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true });
+    const { count: step2Completed } = await supabase
+      .from("simulation_runs")
+      .select("*", { count: "exact", head: true })
+      .not("step2_completed_at", "is", null);
 
-  const { count: verifiedDocs } = await supabase
-    .from("documents")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "verified");
+    // 문서 통계
+    const { count: totalDocs } = await supabase
+      .from("documents")
+      .select("*", { count: "exact", head: true });
 
-  // 리드 통계
-  const { count: totalLeads } = await supabase
-    .from("leads")
-    .select("*", { count: "exact", head: true });
+    const { count: verifiedDocs } = await supabase
+      .from("documents")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "verified");
 
-  const { count: sentLeads } = await supabase
-    .from("leads")
-    .select("*", { count: "exact", head: true })
-    .eq("sent_status", "sent");
+    // 리드 통계
+    const { count: totalLeads } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true });
 
-  return {
-    totalRuns: totalRuns || 0,
-    recentRuns: recentRuns || 0,
-    step1Completed: step1Completed || 0,
-    step2Completed: step2Completed || 0,
-    totalDocs: totalDocs || 0,
-    verifiedDocs: verifiedDocs || 0,
-    totalLeads: totalLeads || 0,
-    sentLeads: sentLeads || 0,
-    leadSuccessRate: totalLeads ? Math.round(((sentLeads || 0) / totalLeads) * 100) : 0,
-  };
+    const { count: sentLeads } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("sent_status", "sent");
+
+    return {
+      totalRuns: totalRuns || 0,
+      recentRuns: recentRuns || 0,
+      step1Completed: step1Completed || 0,
+      step2Completed: step2Completed || 0,
+      totalDocs: totalDocs || 0,
+      verifiedDocs: verifiedDocs || 0,
+      totalLeads: totalLeads || 0,
+      sentLeads: sentLeads || 0,
+      leadSuccessRate: totalLeads ? Math.round(((sentLeads || 0) / totalLeads) * 100) : 0,
+    };
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    return {
+      totalRuns: 0,
+      recentRuns: 0,
+      step1Completed: 0,
+      step2Completed: 0,
+      totalDocs: 0,
+      verifiedDocs: 0,
+      totalLeads: 0,
+      sentLeads: 0,
+      leadSuccessRate: 0,
+    };
+  }
 }
 
 export default async function AdminDashboard() {

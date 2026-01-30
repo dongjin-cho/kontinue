@@ -123,3 +123,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Container 가운데 정렬 */
+.container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 1280px;
+}
