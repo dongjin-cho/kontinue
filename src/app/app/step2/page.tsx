@@ -3,29 +3,37 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, Calculator, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Step2FormV2 } from "@/components/step2/Step2FormV2";
 import { Step2ResultV2 } from "@/components/step2/Step2ResultV2";
+import { DealScenarioForm } from "@/components/deal/DealScenarioForm";
+import { DealScenarioResults } from "@/components/deal/DealScenarioResults";
 import type { Step1Result } from "@/lib/valuation/types";
 import type { Step2V2Result } from "@/lib/simulations/types_v2";
+import type { DealScenarioOutput } from "@/lib/deal/scenarios";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 
 export default function Step2Page() {
   const router = useRouter();
   const [step1Result, setStep1Result] = React.useState<Step1Result | null>(null);
   const [result, setResult] = React.useState<Step2V2Result | null>(null);
+  const [dealResult, setDealResult] = React.useState<DealScenarioOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState("pv-simulation");
   const resultRef = React.useRef<HTMLDivElement>(null);
+  const dealResultRef = React.useRef<HTMLDivElement>(null);
 
   // Load Step1 result and Step2 saved result from localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const savedStep1 = localStorage.getItem("sme_step1_result");
       const savedStep2 = localStorage.getItem("sme_step2_result_v2");
+      const savedDeal = localStorage.getItem("sme_deal_scenarios_result_v1");
 
       if (savedStep1) {
         try {
@@ -55,6 +63,14 @@ export default function Step2Page() {
         }
       }
 
+      if (savedDeal) {
+        try {
+          setDealResult(JSON.parse(savedDeal));
+        } catch {
+          // ignore
+        }
+      }
+
       setIsLoading(false);
     }
   }, [router]);
@@ -68,6 +84,18 @@ export default function Step2Page() {
     // Scroll to result
     setTimeout(() => {
       resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const handleDealResult = (newResult: DealScenarioOutput) => {
+    setDealResult(newResult);
+    // Save to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sme_deal_scenarios_result_v1", JSON.stringify(newResult));
+    }
+    // Scroll to result
+    setTimeout(() => {
+      dealResultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   };
 
@@ -145,15 +173,39 @@ export default function Step2Page() {
             </CardContent>
           </Card>
 
-          {/* 입력 폼 (V2) */}
-          <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pv-simulation" className="flex items-center gap-2">
+                <Calculator className="h-4 w-4" />
+                락인/지급구조 (PV)
+              </TabsTrigger>
+              <TabsTrigger value="deal-scenarios" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                딜 구조 시나리오
+              </TabsTrigger>
+            </TabsList>
 
-          {/* 결과 패널 (V2) */}
-          {result && (
-            <div ref={resultRef} className="scroll-mt-20">
-              <Step2ResultV2 result={result} />
-            </div>
-          )}
+            {/* Tab 1: 기존 Step2 V2 */}
+            <TabsContent value="pv-simulation" className="space-y-6 mt-6">
+              <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
+              {result && (
+                <div ref={resultRef} className="scroll-mt-20">
+                  <Step2ResultV2 result={result} />
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Tab 2: 딜 구조 시나리오 */}
+            <TabsContent value="deal-scenarios" className="space-y-6 mt-6">
+              <DealScenarioForm step1Result={step1Result} onResult={handleDealResult} />
+              {dealResult && (
+                <div ref={dealResultRef} className="scroll-mt-20">
+                  <DealScenarioResults result={dealResult} />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
