@@ -63,10 +63,13 @@ function LoginContent() {
     setError(null);
 
     try {
+      // auth/callback으로 리다이렉트 후 next 파라미터로 최종 목적지 전달
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+      
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}${redirectTo}`,
+          emailRedirectTo: callbackUrl,
         },
       });
 
@@ -90,30 +93,30 @@ function LoginContent() {
   // 이메일 전송 완료 화면
   if (isSent) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md border-slate-200">
           <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-4">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
             </div>
-            <CardTitle>이메일을 확인해주세요</CardTitle>
-            <CardDescription className="text-base">
-              <span className="font-medium text-foreground">{email}</span>
-              로 로그인 링크를 보냈습니다.
+            <CardTitle className="text-slate-800">이메일을 확인해 주십시오</CardTitle>
+            <CardDescription className="text-base text-slate-600">
+              <span className="font-medium text-slate-800">{email}</span>
+              로 로그인 링크를 발송했습니다.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Alert>
-              <Mail className="h-4 w-4" />
-              <AlertDescription>
-                이메일의 링크를 클릭하면 자동으로 로그인됩니다. 이메일이 오지
-                않는다면 스팸 폴더를 확인해주세요.
+            <Alert className="border-slate-200 bg-slate-50">
+              <Mail className="h-4 w-4 text-slate-600" />
+              <AlertDescription className="text-slate-600">
+                이메일의 링크를 클릭하시면 자동으로 재무제표 분석 화면으로 이동합니다.
+                이메일이 도착하지 않는 경우 스팸 폴더를 확인해 주십시오.
               </AlertDescription>
             </Alert>
 
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full border-slate-300"
               onClick={() => {
                 setIsSent(false);
                 setEmail("");
@@ -124,9 +127,9 @@ function LoginContent() {
 
             <div className="text-center">
               <Link href="/">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  홈으로 돌아가기
+                  처음으로 돌아가기
                 </Button>
               </Link>
             </div>
@@ -137,36 +140,36 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-slate-200">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">로그인</CardTitle>
-          <CardDescription>
-            Step 3를 진행하려면 로그인이 필요합니다.
+          <CardTitle className="text-2xl text-slate-800">본인 확인</CardTitle>
+          <CardDescription className="text-slate-500">
+            재무제표 분석을 위해 이메일 인증이 필요합니다.
             <br />
-            이메일을 입력하시면 로그인 링크를 보내드립니다.
+            이메일 주소를 입력해 주시면 로그인 링크를 보내드리겠습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className="text-slate-700">이메일</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@company.com"
-                  className="pl-10"
+                  className="pl-10 border-slate-200 focus:border-slate-400"
                   required
                 />
               </div>
             </div>
 
             {error && (
-              <Alert variant="destructive">
+              <Alert variant="destructive" className="border-red-200 bg-red-50">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
@@ -174,7 +177,7 @@ function LoginContent() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-slate-800 hover:bg-slate-700"
               size="lg"
               disabled={isLoading || !email}
             >
@@ -192,16 +195,16 @@ function LoginContent() {
             </Button>
           </form>
 
-          <Separator className="my-6" />
+          <Separator className="my-6 bg-slate-200" />
 
-          <div className="text-center text-sm text-muted-foreground">
+          <div className="text-center text-sm text-slate-400">
             <p>
-              로그인하면{" "}
-              <Link href="/terms" className="underline hover:text-foreground">
+              로그인하시면{" "}
+              <Link href="/terms" className="underline hover:text-slate-600">
                 이용약관
               </Link>
               과{" "}
-              <Link href="/privacy" className="underline hover:text-foreground">
+              <Link href="/privacy" className="underline hover:text-slate-600">
                 개인정보처리방침
               </Link>
               에 동의하는 것으로 간주됩니다.
@@ -210,9 +213,9 @@ function LoginContent() {
 
           <div className="mt-6 text-center">
             <Link href="/">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="text-slate-500 hover:text-slate-700">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                홈으로 돌아가기
+                처음으로 돌아가기
               </Button>
             </Link>
           </div>
