@@ -24,9 +24,19 @@ export default async function AdminRunsPage({
 
   const supabase = createAdminClient();
 
-  let runs: Record<string, unknown>[] = [];
+  interface SimulationRun {
+    id: string;
+    user_id: string | null;
+    anon_token: string | null;
+    industry_group: string | null;
+    step1_completed_at: string | null;
+    step2_completed_at: string | null;
+    step1_result: Record<string, unknown> | null;
+    created_at: string;
+  }
+
+  let runs: SimulationRun[] = [];
   let count = 0;
-  let error = null;
 
   try {
     const result = await supabase
@@ -35,9 +45,12 @@ export default async function AdminRunsPage({
       .order("created_at", { ascending: false })
       .range(offset, offset + pageSize - 1);
     
-    runs = result.data || [];
+    runs = (result.data as SimulationRun[]) || [];
     count = result.count || 0;
-    error = result.error;
+    
+    if (result.error) {
+      console.error("Runs query error:", result.error);
+    }
   } catch (e) {
     console.error("Runs query error:", e);
   }
