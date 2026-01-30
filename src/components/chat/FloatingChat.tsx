@@ -11,6 +11,7 @@ import {
   Loader2,
   Bot,
   User,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,37 +20,34 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  sources?: { title: string }[];
 }
 
 const INITIAL_MESSAGE: Message = {
   id: "welcome",
   role: "assistant",
-  content: "안녕하세요! 기업가치 평가와 M&A 관련 궁금한 점이 있으시면 질문해 주세요.",
+  content: "안녕하세요! M&A와 기업가치 평가에 관해 궁금한 점이 있으시면 질문해 주세요.",
   timestamp: new Date(),
 };
 
-// 간단한 FAQ 응답 (실제 서비스에서는 AI API 연동)
+// 폴백 FAQ 응답 (API 실패 시)
 const FAQ_RESPONSES: Record<string, string> = {
-  "ebitda": "EBITDA는 'Earnings Before Interest, Taxes, Depreciation, and Amortization'의 약자로, 이자, 세금, 감가상각비 차감 전 이익을 의미합니다. 기업의 영업 현금흐름 창출 능력을 보여주는 지표입니다.",
-  "멀티플": "EV/EBITDA 멀티플은 기업가치(EV)를 EBITDA로 나눈 값으로, 동종 업계 기업들과 비교하여 상대적 가치를 평가하는 데 사용됩니다. 멀티플이 높을수록 시장에서 높게 평가받고 있다는 의미입니다.",
-  "dlom": "DLOM(Discount for Lack of Marketability)은 비상장 기업의 유동성 부족에 대한 할인율입니다. 상장기업 대비 주식을 쉽게 매도할 수 없는 점을 반영하여 15~30% 정도 할인을 적용합니다.",
-  "lock-in": "Lock-in 기간은 M&A 거래 후 창업자/경영진이 일정 기간 회사에 남아 경영에 참여해야 하는 조건입니다. 일반적으로 1~5년 정도이며, 이 기간 동안 일부 대금이 유보될 수 있습니다.",
-  "escrow": "Escrow는 거래 대금의 일부를 제3자(에스크로 에이전트)에게 예치해두고, 일정 조건 충족 시 지급하는 방식입니다. 주로 진술 및 보증 위반에 대비한 안전장치로 활용됩니다.",
-  "earnout": "Earnout은 거래 후 일정 목표(매출, 이익 등)를 달성하면 추가 대금을 지급하는 조건부 대가입니다. 매수자와 매도자 간 가치평가 차이를 줄이는 데 활용됩니다.",
-  "기업가치": "기업가치(Enterprise Value, EV)는 기업 전체의 가치로, 지분가치(Equity Value)에 순차입금을 더한 값입니다. 인수자 관점에서 기업을 인수하기 위해 필요한 총 비용을 나타냅니다.",
-  "지분가치": "지분가치(Equity Value)는 주주에게 귀속되는 가치로, 기업가치(EV)에서 순차입금을 차감한 금액입니다. M&A에서 매도자가 실제로 받게 되는 금액의 기준이 됩니다.",
+  "ebitda": "EBITDA는 이자, 세금, 감가상각비 차감 전 이익으로, 기업의 영업 현금흐름 창출 능력을 보여주는 지표입니다.",
+  "멀티플": "EV/EBITDA 멀티플은 기업가치를 EBITDA로 나눈 값으로, 상대적 가치평가에 사용됩니다.",
+  "dlom": "DLOM은 비상장 기업의 유동성 부족에 대한 할인율로, 보통 15~30% 적용됩니다.",
+  "lock-in": "Lock-in은 M&A 후 창업자가 일정 기간 경영에 참여해야 하는 조건입니다.",
+  "escrow": "Escrow는 거래 대금 일부를 제3자에게 예치하고 조건 충족 시 지급하는 방식입니다.",
+  "earnout": "Earnout은 거래 후 목표 달성 시 추가 대금을 지급하는 조건부 대가입니다.",
 };
 
-function findResponse(query: string): string {
+function findFallbackResponse(query: string): string {
   const lowerQuery = query.toLowerCase();
-  
   for (const [keyword, response] of Object.entries(FAQ_RESPONSES)) {
     if (lowerQuery.includes(keyword)) {
       return response;
     }
   }
-  
-  return "해당 질문에 대한 정보를 찾지 못했습니다. 다른 방식으로 질문해 주시거나, 기업가치, EBITDA, 멀티플, DLOM, Lock-in, Escrow, Earnout 등의 키워드로 질문해 주세요.";
+  return "해당 질문에 대한 정보를 찾지 못했습니다. EBITDA, 멀티플, DLOM, Lock-in 등의 키워드로 질문해 주세요.";
 }
 
 export function FloatingChat() {
@@ -77,21 +75,52 @@ export function FloatingChat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput("");
     setIsLoading(true);
 
-    // 응답 생성 (시뮬레이션)
-    setTimeout(() => {
-      const response = findResponse(userMessage.content);
+    try {
+      // API 호출
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: currentInput,
+          history: messages.slice(-6).map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data?.answer) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.data.answer,
+          timestamp: new Date(),
+          sources: data.data.sources,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        throw new Error("Invalid response");
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      // 폴백 응답
+      const fallbackResponse = findFallbackResponse(currentInput);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response,
+        content: fallbackResponse,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -126,12 +155,13 @@ export function FloatingChat() {
             <CardTitle className="text-base flex items-center gap-2">
               <Bot className="h-5 w-5" />
               M&A 도우미
+              <Sparkles className="h-3 w-3 text-yellow-400" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {/* 메시지 영역 */}
-            <div 
-              className="h-80 p-4 overflow-y-auto" 
+            <div
+              className="h-80 p-4 overflow-y-auto"
               ref={scrollRef}
             >
               <div className="space-y-4">
@@ -157,15 +187,22 @@ export function FloatingChat() {
                         <User className="h-4 w-4" />
                       )}
                     </div>
-                    <div
-                      className={cn(
-                        "rounded-lg px-3 py-2 max-w-[75%] text-sm",
-                        message.role === "assistant"
-                          ? "bg-slate-100 text-slate-700"
-                          : "bg-slate-800 text-white"
+                    <div className="flex flex-col gap-1 max-w-[75%]">
+                      <div
+                        className={cn(
+                          "rounded-lg px-3 py-2 text-sm",
+                          message.role === "assistant"
+                            ? "bg-slate-100 text-slate-700"
+                            : "bg-slate-800 text-white"
+                        )}
+                      >
+                        {message.content}
+                      </div>
+                      {message.sources && message.sources.length > 0 && (
+                        <div className="text-xs text-slate-400 px-1">
+                          참고: {message.sources.map((s) => s.title).join(", ")}
+                        </div>
                       )}
-                    >
-                      {message.content}
                     </div>
                   </div>
                 ))}
@@ -203,7 +240,7 @@ export function FloatingChat() {
                 </Button>
               </div>
               <p className="text-xs text-slate-400 mt-2 text-center">
-                EBITDA, 멀티플, Lock-in 등 키워드로 질문해 보세요
+                AI 기반 M&A 상담 (GPT-3.5)
               </p>
             </div>
           </CardContent>
