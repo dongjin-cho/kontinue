@@ -126,81 +126,47 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-2xl font-semibold text-slate-800 mb-3">
-                분석 프로세스
+                분석 단계
               </h2>
               <p className="text-slate-500">
                 단계별로 심화된 분석을 제공해 드립니다
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
+            {/* 3-Step Process */}
+            <div className="grid md:grid-cols-3 gap-6">
               {/* Step 1 */}
-              <Card className="relative border-slate-300 bg-slate-50">
-                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold mx-auto mb-4">
                   1
                 </div>
-                <CardHeader className="pt-6">
-                  <div className="inline-flex items-center gap-2 text-xs text-slate-500 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    현재 이용 가능
-                  </div>
-                  <CardTitle className="text-slate-800">기업가치 평가</CardTitle>
-                  <CardDescription className="text-base text-slate-600">
-                    산업 분류, 매출, EBITDA 등 기본 정보를 바탕으로 
-                    귀사의 기업가치 범위를 산출합니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm text-slate-600">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-500" />
-                      EV/EBITDA 기반 상대가치 평가
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-500" />
-                      기업 특성 보정 반영
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-500" />
-                      산출 근거 및 설명 제공
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+                <h3 className="font-semibold text-slate-800 mb-2">기업가치 평가</h3>
+                <p className="text-sm text-slate-500">
+                  산업 분류, 매출, EBITDA 등 기본 정보를 바탕으로 기업가치 범위를 산출합니다.
+                </p>
+              </div>
 
               {/* Step 2 */}
-              <Card className="relative border-slate-200 bg-white">
-                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-slate-300 text-slate-600 flex items-center justify-center font-semibold text-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold mx-auto mb-4">
                   2
                 </div>
-                <CardHeader className="pt-6">
-                  <div className="inline-flex items-center gap-2 text-xs text-slate-400 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                    Step 1 완료 후 이용 가능
-                  </div>
-                  <CardTitle className="text-slate-700">상세 분석</CardTitle>
-                  <CardDescription className="text-base text-slate-500">
-                    거래 구조, 경영 참여 조건 등을 반영하여 
-                    예상 수령액을 분석합니다.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm text-slate-500">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-400" />
-                      현금흐름 분석
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-400" />
-                      딜 구조 시나리오
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-slate-400" />
-                      예상 수령액 산출
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
+                <h3 className="font-semibold text-slate-800 mb-2">현금흐름 분석</h3>
+                <p className="text-sm text-slate-500">
+                  거래 조건과 경영 참여 기간을 반영하여 예상 수령액을 분석합니다.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold mx-auto mb-4">
+                  3
+                </div>
+                <h3 className="font-semibold text-slate-800 mb-2">재무제표 검증</h3>
+                <p className="text-sm text-slate-500">
+                  재무제표 업로드를 통해 분석 정확도를 높이고 전문가 연결을 지원합니다.
+                </p>
+              </div>
             </div>
           </div>
         </div>
