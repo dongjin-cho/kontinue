@@ -1,14 +1,25 @@
 import OpenAI from "openai";
 
-// OpenAI 클라이언트 (서버 사이드 전용)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// OpenAI 클라이언트 (lazy initialization으로 빌드 시 에러 방지)
+let openaiClient: OpenAI | null = null;
+
+function getOpenAI(): OpenAI {
+  if (!openaiClient) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY 환경 변수가 설정되지 않았습니다.");
+    }
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openaiClient;
+}
 
 /**
  * 텍스트를 임베딩 벡터로 변환
  */
 export async function createEmbedding(text: string): Promise<number[]> {
+  const openai = getOpenAI();
   const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: text,
@@ -21,6 +32,7 @@ export async function createEmbedding(text: string): Promise<number[]> {
  * 여러 텍스트를 한 번에 임베딩
  */
 export async function createEmbeddings(texts: string[]): Promise<number[][]> {
+  const openai = getOpenAI();
   const response = await openai.embeddings.create({
     model: "text-embedding-3-small",
     input: texts,
@@ -37,6 +49,8 @@ export async function generateAnswer(
   context: string[],
   conversationHistory: { role: "user" | "assistant"; content: string }[] = []
 ): Promise<{ answer: string; tokensUsed: number }> {
+  const openai = getOpenAI();
+  
   const systemPrompt = `당신은 M&A와 기업가치 평가 전문 어드바이저입니다. 
 한국어로 답변하며, 전문적이면서도 이해하기 쉽게 설명합니다.
 제공된 컨텍스트 정보를 기반으로 답변하되, 컨텍스트에 없는 내용은 일반적인 M&A 지식으로 보완합니다.
