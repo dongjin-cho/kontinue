@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
+import { formatDateTime } from "@/lib/utils/date";
 import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -134,7 +135,7 @@ export default async function AdminRunsPage({
                         )}
                       </td>
                       <td className="p-3 text-muted-foreground">
-                        {new Date(run.created_at).toLocaleDateString("ko-KR")}
+                        {formatDateTime(run.created_at)}
                       </td>
                     </tr>
                   );

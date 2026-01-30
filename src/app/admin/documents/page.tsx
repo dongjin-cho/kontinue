@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/utils/date";
 import { Download } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -95,7 +96,7 @@ export default async function AdminDocumentsPage({
                       </td>
                       <td className="p-3">{doc.selected_period_id || "-"}</td>
                       <td className="p-3 text-muted-foreground">
-                        {new Date(doc.created_at).toLocaleDateString("ko-KR")}
+                        {formatDateTime(doc.created_at)}
                       </td>
                     </tr>
                   );
