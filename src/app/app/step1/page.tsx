@@ -35,25 +35,25 @@ export default function Step1Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="container flex h-14 items-center">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 text-slate-600 hover:text-slate-800">
               <ArrowLeft className="h-4 w-4" />
-              홈으로
+              처음으로
             </Button>
           </Link>
           <div className="flex-1 text-center">
-            <span className="font-semibold">Step 1: 약식 기업가치 평가</span>
+            <span className="font-semibold text-slate-800">기업가치 평가</span>
           </div>
-          <div className="w-20" /> {/* Spacer for centering */}
+          <div className="w-20" />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container py-6 px-4 max-w-2xl mx-auto">
+      <main className="container py-8 px-4 max-w-2xl mx-auto">
         <div className="space-y-6">
           {/* 입력 폼 */}
           <Step1Form onResult={handleResult} />
@@ -68,11 +68,10 @@ export default function Step1Page() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t mt-12">
-        <div className="container py-6 text-center text-sm text-muted-foreground">
+      <footer className="border-t border-slate-200 mt-12 bg-white">
+        <div className="container py-6 text-center text-sm text-slate-400">
           <p>
-            본 결과는 참고용이며, 실제 M&A 거래 시에는 전문가의 정밀 실사가
-            필요합니다.
+            본 결과는 참고 자료이며, 실제 M&A 거래 시에는 전문가의 정밀 실사가 필요합니다.
           </p>
         </div>
       </footer>
