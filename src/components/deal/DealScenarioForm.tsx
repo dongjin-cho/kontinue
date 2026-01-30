@@ -89,10 +89,10 @@ export function DealScenarioForm({ step1Result, onResult }: DealScenarioFormProp
 
   // Step1 결과에서 revenueGrowth 가져오기
   React.useEffect(() => {
-    if (step1Result?.assumptions?.revenueGrowth !== undefined) {
+    if (step1Result?.inputs?.revenueGrowth !== undefined) {
       setFormData((prev) => ({
         ...prev,
-        revenueGrowth: step1Result.assumptions.revenueGrowth,
+        revenueGrowth: step1Result.inputs.revenueGrowth,
       }));
     }
   }, [step1Result]);
