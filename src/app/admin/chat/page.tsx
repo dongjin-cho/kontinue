@@ -1,8 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
-import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, User, Bot, Calendar, Hash } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { MessageCircle, User, Bot, Calendar, Hash, AlertTriangle } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -14,44 +14,49 @@ interface ChatMessage {
   sources?: { title: string }[];
 }
 
-interface ChatSession {
-  id: string;
-  user_id?: string;
-  anon_token?: string;
-  title?: string;
-  created_at: string;
-  messages: ChatMessage[];
-}
-
 function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Seoul",
-  }).format(date);
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("ko-KR", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Seoul",
+    }).format(date);
+  } catch {
+    return dateString;
+  }
 }
 
 export default async function AdminChatPage() {
   const supabase = createServiceClient();
+  let messages: ChatMessage[] = [];
+  let errorMessage: string | null = null;
 
-  // 최근 메시지 가져오기 (세션별로 그룹화하지 않고 시간순 정렬)
-  const { data: messages, error } = await supabase
-    .from("chat_messages")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(200);
+  try {
+    // 최근 메시지 가져오기
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
 
-  if (error) {
-    console.error("Failed to fetch chat messages:", error);
+    if (error) {
+      console.error("Failed to fetch chat messages:", error);
+      errorMessage = error.message;
+    } else {
+      messages = data || [];
+    }
+  } catch (err) {
+    console.error("Chat messages query error:", err);
+    errorMessage = "테이블이 존재하지 않거나 접근 권한이 없습니다. Supabase migration을 실행해주세요.";
   }
 
   // 세션별로 그룹화
   const sessionMap = new Map<string, ChatMessage[]>();
-  (messages || []).forEach((msg) => {
+  messages.forEach((msg) => {
     const sessionId = msg.session_id || "anonymous";
     if (!sessionMap.has(sessionId)) {
       sessionMap.set(sessionId, []);
@@ -74,9 +79,9 @@ export default async function AdminChatPage() {
     );
 
   // 통계
-  const totalMessages = messages?.length || 0;
-  const userMessages = messages?.filter((m) => m.role === "user").length || 0;
-  const totalTokens = messages?.reduce((sum, m) => sum + (m.tokens_used || 0), 0) || 0;
+  const totalMessages = messages.length;
+  const userMessages = messages.filter((m) => m.role === "user").length;
+  const totalTokens = messages.reduce((sum, m) => sum + (m.tokens_used || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -84,6 +89,21 @@ export default async function AdminChatPage() {
         <h1 className="text-2xl font-bold">챗봇 대화 내역</h1>
         <p className="text-muted-foreground">사용자들의 챗봇 대화를 확인합니다.</p>
       </div>
+
+      {/* 에러 메시지 */}
+      {errorMessage && (
+        <Alert className="border-yellow-500/50 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription>
+            <p className="font-medium">데이터를 불러올 수 없습니다</p>
+            <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+            <p className="text-sm mt-2">
+              <code className="bg-muted px-1 py-0.5 rounded">chat_messages</code> 테이블이 필요합니다. 
+              Supabase에서 migration을 실행해주세요.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* 통계 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
