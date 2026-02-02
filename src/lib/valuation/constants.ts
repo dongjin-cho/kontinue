@@ -100,12 +100,14 @@ export const WEIGHT_PEER = 0.30;
 // Peer proxy 배수 (상장사 멀티플 proxy = 산업군 median * 1.2)
 export const PEER_PROXY_MULTIPLIER = 1.2;
 
-// 성장률 보정
+// 성장률 보정 (새로운 6단계 체계)
 export const GROWTH_ADJUSTMENTS = {
-  high: { threshold: 20, adj: 0.15 },    // >= 20%: +15%
-  medium: { threshold: 10, adj: 0.07 },  // 10~20%: +7%
-  low: { threshold: 0, adj: 0 },         // 0~10%: 0%
-  negative: { adj: -0.15 },              // < 0%: -15%
+  exceptional: { threshold: 12, adj: 0.10 },  // >= 12%: +10% (예외적 고성장)
+  high: { threshold: 9, adj: 0.065 },         // 9~12%: +6.5% (중소기업 상위권)
+  medium: { threshold: 6, adj: 0.04 },        // 6~9%: +4% (성장 스토리 성립)
+  normal: { threshold: 3, adj: 0 },           // 3~6%: 0% (평균적 중소기업)
+  stagnant: { threshold: 0, adj: -0.04 },     // 0~3%: -4% (정체/성숙)
+  negative: { adj: -0.125 },                  // < 0%: -12.5% (역성장)
 };
 
 // 규모(직원 수) 보정

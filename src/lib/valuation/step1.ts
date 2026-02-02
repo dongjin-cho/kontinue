@@ -98,17 +98,21 @@ export function validateInputConsistency(input: Step1Input): ValidationWarning[]
 }
 
 /**
- * 성장률 보정 계산
+ * 성장률 보정 계산 (6단계 체계)
  */
 export function calculateGrowthAdjustment(revenueGrowth: number): number {
-  if (revenueGrowth >= GROWTH_ADJUSTMENTS.high.threshold) {
-    return GROWTH_ADJUSTMENTS.high.adj; // +15%
+  if (revenueGrowth >= GROWTH_ADJUSTMENTS.exceptional.threshold) {
+    return GROWTH_ADJUSTMENTS.exceptional.adj; // >= 12%: +10%
+  } else if (revenueGrowth >= GROWTH_ADJUSTMENTS.high.threshold) {
+    return GROWTH_ADJUSTMENTS.high.adj; // 9~12%: +6.5%
   } else if (revenueGrowth >= GROWTH_ADJUSTMENTS.medium.threshold) {
-    return GROWTH_ADJUSTMENTS.medium.adj; // +7%
-  } else if (revenueGrowth >= GROWTH_ADJUSTMENTS.low.threshold) {
-    return GROWTH_ADJUSTMENTS.low.adj; // 0%
+    return GROWTH_ADJUSTMENTS.medium.adj; // 6~9%: +4%
+  } else if (revenueGrowth >= GROWTH_ADJUSTMENTS.normal.threshold) {
+    return GROWTH_ADJUSTMENTS.normal.adj; // 3~6%: 0%
+  } else if (revenueGrowth >= GROWTH_ADJUSTMENTS.stagnant.threshold) {
+    return GROWTH_ADJUSTMENTS.stagnant.adj; // 0~3%: -4%
   } else {
-    return GROWTH_ADJUSTMENTS.negative.adj; // -15%
+    return GROWTH_ADJUSTMENTS.negative.adj; // < 0%: -12.5%
   }
 }
 

@@ -140,7 +140,7 @@ const BASE_SCORES: Record<ScenarioCode, { cashNow: number; upside: number; risk:
 };
 
 // ========================
-// Eligibility Check
+// Eligibility Check (Updated with new thresholds)
 // ========================
 
 function checkEligibility(
@@ -153,45 +153,48 @@ function checkEligibility(
 
   switch (code) {
     case "ALL_CASH_CONTROL":
-      if (hopeToSell === "전량" && founderShare >= 0.5) {
-        reasons.push("전량 매각 희망 + 창업자 지분 50% 이상");
+      // 전량 매각 희망만 체크 (창업자 지분 조건 완화)
+      if (hopeToSell === "전량") {
+        reasons.push("전량 매각 희망");
         return { eligible: true, reasons };
       }
-      if (hopeToSell !== "전량") reasons.push("전량 매각 희망 필요");
-      if (founderShare < 0.5) reasons.push("창업자 지분 50% 미만");
+      reasons.push("전량 매각 희망 필요");
       return { eligible: false, reasons };
 
     case "PARTIAL_EXIT_ROLLOVER":
-      if (hopeToSell === "일부" && founderShare >= 0.3 && revenueGrowth >= 10) {
-        reasons.push("일부 매각 희망 + 창업자 지분 30% 이상 + 매출 성장률 10% 이상");
+      // 일부 매각 + 성장률 6% 이상 (기존 10%에서 완화)
+      if (hopeToSell === "일부" && revenueGrowth >= 6) {
+        reasons.push("일부 매각 희망 + 매출 성장률 6% 이상");
         return { eligible: true, reasons };
       }
       if (hopeToSell !== "일부") reasons.push("일부 매각 희망 필요");
-      if (founderShare < 0.3) reasons.push("창업자 지분 30% 미만");
-      if (revenueGrowth < 10) reasons.push("매출 성장률 10% 미만");
+      if (revenueGrowth < 6) reasons.push("매출 성장률 6% 미만");
       return { eligible: false, reasons };
 
     case "PERFORMANCE_EARNOUT":
-      if (revenueGrowth >= 15 && ebitdaTrend === "변동") {
-        reasons.push("매출 성장률 15% 이상 + EBITDA 추이 변동");
+      // EBITDA 변동 + 성장률 6% 이상 (Earnout = 불확실성 조정 장치)
+      if (ebitdaTrend === "변동" && revenueGrowth >= 6) {
+        reasons.push("EBITDA 추이 변동 + 매출 성장률 6% 이상");
         return { eligible: true, reasons };
       }
-      if (revenueGrowth < 15) reasons.push("매출 성장률 15% 미만");
       if (ebitdaTrend !== "변동") reasons.push("EBITDA 추이가 변동이 아님");
+      if (revenueGrowth < 6) reasons.push("매출 성장률 6% 미만");
       return { eligible: false, reasons };
 
     case "CASH_AND_STOCK":
+      // 시너지 키워드 또는 성장률 9% 이상
       const hasSynergy = companyProfile.includes("시너지");
-      if (hasSynergy || revenueGrowth >= 15) {
+      if (hasSynergy || revenueGrowth >= 9) {
         if (hasSynergy) reasons.push("시너지 키워드 포함");
-        if (revenueGrowth >= 15) reasons.push("매출 성장률 15% 이상");
+        if (revenueGrowth >= 9) reasons.push("매출 성장률 9% 이상 (고성장)");
         return { eligible: true, reasons };
       }
       reasons.push("시너지 키워드 없음");
-      reasons.push("매출 성장률 15% 미만");
+      reasons.push("매출 성장률 9% 미만");
       return { eligible: false, reasons };
 
     case "ASSET_DEAL":
+      // 전량 매각이 아니고 사업부 키워드 포함
       const hasBizUnit = companyProfile.includes("사업부");
       if (hopeToSell !== "전량" && hasBizUnit) {
         reasons.push("전량 매각이 아님 + 사업부 키워드 포함");
@@ -476,24 +479,24 @@ function generateExplanation(
   const { hopeToSell, revenueGrowth, ebitdaTrend } = input;
 
   if (!eligible) {
-    return `현재 조건에서는 ${SCENARIO_NAMES[code]} 구조가 적합하지 않습니다. 적합성 조건을 확인해주세요.`;
+    return `현재 조건에서는 ${SCENARIO_NAMES[code]} 구조가 적합하지 않습니다. 적합성 조건을 확인해 주십시오.`;
   }
 
   switch (code) {
     case "ALL_CASH_CONTROL":
-      return `전량 매각을 희망하고 창업자 지분이 충분하여 전액 현금 인수 구조가 적합합니다. 거래 즉시 전액을 현금으로 수령하며, 미래 리스크 없이 깔끔한 엑싯이 가능합니다.`;
+      return `가장 단순하고 확실한 구조입니다. 가격은 다소 보수적일 수 있지만, 리스크 없이 한 번에 현금화가 가능합니다. 거래 시점에 금액이 확정되며, 회사와의 관계가 완전히 종료됩니다.`;
 
     case "PARTIAL_EXIT_ROLLOVER":
-      return `일부 매각을 희망하고 성장세(${revenueGrowth}%)가 양호하여 부분 매각 후 롤오버 구조가 적합합니다. 즉시 현금을 확보하면서도 잔여 지분으로 미래 업사이드에 참여할 수 있습니다.`;
+      return `지금 일정 금액을 확보하면서, 회사가 더 커질 경우 추가적인 업사이드를 가져갈 수 있는 구조입니다. 성장률(${revenueGrowth}%)이 양호하여 롤오버 지분의 가치 상승 기대가 있습니다. 경영 연속성을 중시하는 인수자에게 유리합니다.`;
 
     case "PERFORMANCE_EARNOUT":
-      return `높은 성장률(${revenueGrowth}%)과 변동적인 EBITDA 추이로 인해 매수자와 가치 평가 갭이 있을 수 있습니다. 어닝아웃 구조를 통해 성과 달성 시 추가 대가를 확보할 수 있습니다.`;
+      return `지금 가격 차이를 좁히기 위한 구조입니다. 변동적인 EBITDA 추이로 인해 매수자와 가치 평가 갭이 있을 수 있으며, 어닝아웃을 통해 성과가 나오면 총 매각 금액은 All-cash보다 더 커질 수 있습니다.`;
 
     case "CASH_AND_STOCK":
-      return `시너지 효과 또는 높은 성장성으로 전략적 인수 가능성이 높습니다. 현금과 주식 혼합 구조를 통해 즉시 현금과 함께 인수자의 성장에 참여할 수 있습니다.`;
+      return `확정 현금은 줄지만, 매수자 기업 가치 상승에 따라 추가 업사이드를 기대할 수 있습니다. 시너지 효과 또는 높은 성장성(${revenueGrowth}%)으로 전략적 인수 가능성이 높습니다.`;
 
     case "ASSET_DEAL":
-      return `특정 사업부 매각을 고려하는 경우 자산 양수도 구조가 적합합니다. 법인으로 현금이 유입되며, 창업자 수령은 배당/감자/청산 등 2차 절차가 필요합니다.`;
+      return `거래 자체는 비교적 수월하지만, 주주가 실제 현금을 받기까지 추가 절차가 필요합니다. 현금 유입은 법인으로 들어가며, 주주가 돈을 받으려면 배당/감자/청산 등 2차 단계가 필요합니다.`;
 
     default:
       return "";
@@ -501,36 +504,81 @@ function generateExplanation(
 }
 
 // ========================
-// Scoring & Top 3
+// Scoring & Top 3 (Updated with new 4-axis scoring)
 // ========================
 
 function calculateScoring(
   scenarios: ScenarioResult[],
   input: DealScenarioInput
 ): ScoringResult {
-  const { hopeToSell, revenueGrowth, ebitdaTrend } = input;
+  const { hopeToSell, revenueGrowth, ebitdaTrend, companyProfile, capTable } = input;
+  const employeeBand = "<10"; // 직원수 정보가 없으면 소규모로 가정
   const scoring: ScoringResult = {};
 
   for (const scenario of scenarios) {
     const base = BASE_SCORES[scenario.code];
     let founderFit = 0;
 
-    // Founder Fit 가중치
+    // ① 창업자 매각 의사 (1차 기준)
     if (hopeToSell === "전량") {
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit += 2;
+      if (scenario.code === "PERFORMANCE_EARNOUT") founderFit += 1;
+      if (scenario.code === "CASH_AND_STOCK") founderFit += 1;
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit -= 2;
+    }
+    if (hopeToSell === "일부") {
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 3;
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit -= 2;
+    }
+
+    // ② 기업 성장성 보정 (2차 기준 - Feasibility Check)
+    if (revenueGrowth < 3) {
+      // 정체/성숙
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit += 1;
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit -= 1;
+    } else if (revenueGrowth >= 3 && revenueGrowth < 6) {
+      // 평균적 중소기업
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit += 1;
+    } else if (revenueGrowth >= 6 && revenueGrowth < 9) {
+      // 의미 있는 성장
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 1;
+    } else if (revenueGrowth >= 9) {
+      // 고성장 (상위권)
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 1;
+      if (scenario.code === "CASH_AND_STOCK") founderFit += 1;
+    }
+
+    // ③ 실적 안정성 (3차 기준 - Earn-out 트리거)
+    if (ebitdaTrend === "변동") {
+      if (scenario.code === "PERFORMANCE_EARNOUT") founderFit += 2;
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit -= 1;
+    }
+
+    // ④ 기업 상태 오버라이드 (State Override)
+    
+    // Override 1: 전량 매도 희망 → Earn-out이 더 현실적인 경우
+    if (hopeToSell === "전량" && revenueGrowth >= 6 && ebitdaTrend === "변동") {
+      if (scenario.code === "PERFORMANCE_EARNOUT") founderFit += 2;
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit -= 1;
+    }
+
+    // Override 2: 전량 매도 희망 → 롤오버 요구 가능성 (소규모 조직)
+    if (hopeToSell === "전량" && revenueGrowth >= 6 && employeeBand === "<10") {
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 1;
+      if (scenario.code === "ALL_CASH_CONTROL") founderFit -= 1;
+    }
+
+    // Override 3: 일부 매도 희망 → 전량 매각이 더 합리적인 경우
+    if (hopeToSell === "일부" && revenueGrowth < 3 && ebitdaTrend !== "변동") {
       if (scenario.code === "ALL_CASH_CONTROL") founderFit += 2;
       if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit -= 1;
     }
-    if (hopeToSell === "일부") {
-      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 2;
-      if (scenario.code === "ALL_CASH_CONTROL") founderFit -= 1;
-    }
-    if (revenueGrowth >= 15) {
-      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit += 1;
-      if (scenario.code === "PERFORMANCE_EARNOUT") founderFit += 1;
-      if (scenario.code === "CASH_AND_STOCK") founderFit += 1;
-    }
-    if (ebitdaTrend === "변동") {
-      if (scenario.code === "PERFORMANCE_EARNOUT") founderFit += 1;
+
+    // Override 4: 일부 매도 희망 → 현금+주식이 더 현실적인 경우
+    const hasSynergy = companyProfile.includes("시너지");
+    if (hopeToSell === "일부" && revenueGrowth >= 9 && hasSynergy) {
+      if (scenario.code === "CASH_AND_STOCK") founderFit += 2;
+      if (scenario.code === "PARTIAL_EXIT_ROLLOVER") founderFit -= 1;
     }
 
     // 적합하지 않은 시나리오는 점수 대폭 감소
