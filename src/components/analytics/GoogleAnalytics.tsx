@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-L67K68ERF1";
@@ -15,8 +15,8 @@ interface UTMParams {
   utm_content?: string;
 }
 
-// UTM 파라미터 추적 컴포넌트
-function UTMTracker() {
+// UTM 파라미터 추적 컴포넌트 (내부)
+function UTMTrackerInner() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -48,6 +48,15 @@ function UTMTracker() {
   }, [searchParams, pathname]);
 
   return null;
+}
+
+// Suspense로 감싼 UTM 추적 컴포넌트
+function UTMTracker() {
+  return (
+    <Suspense fallback={null}>
+      <UTMTrackerInner />
+    </Suspense>
+  );
 }
 
 export function GoogleAnalytics() {
