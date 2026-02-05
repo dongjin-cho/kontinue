@@ -155,10 +155,10 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
             </span>
             <span className="text-slate-400">|</span>
             <span>수수료율: {((result.inputsEcho.feeRate || 0.03) * 100).toFixed(1)}%</span>
-            {result.inputsEcho.taxRate > 0 && (
+            {(result.inputsEcho.taxRate || 0) > 0 && (
               <>
                 <span className="text-slate-400">|</span>
-                <span>세율: {(result.inputsEcho.taxRate * 100).toFixed(0)}%</span>
+                <span>세율: {((result.inputsEcho.taxRate || 0) * 100).toFixed(0)}%</span>
               </>
             )}
           </div>
