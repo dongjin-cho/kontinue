@@ -190,7 +190,7 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold mx-auto mb-4">
                   2
                 </div>
-                <h3 className="font-semibold text-slate-800 mb-2">현금흐름 분석</h3>
+                <h3 className="font-semibold text-slate-800 mb-2">매각 시뮬레이션</h3>
                 <p className="text-sm text-slate-500">
                   거래 조건과 경영 참여 기간을 반영하여 예상 수령액을 분석합니다.
                 </p>
