@@ -31,6 +31,22 @@ import type { Step2V2Result } from "@/lib/simulations/types_v2";
 import type { DealScenarioOutput, HopeToSell, EbitdaTrend } from "@/lib/deal/scenarios";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 import { cn } from "@/lib/utils";
+import type { CaseResult } from "@/lib/simulations/types_v2";
+
+// API 응답의 case 객체를 camelCase로 변환
+function transformCase(c: Record<string, unknown>): CaseResult {
+  const kpis = c.kpis as Record<string, unknown>;
+  return {
+    cashflows: c.cashflows as number[],
+    totalNominal: c.total_nominal as number,
+    pv: c.pv as number,
+    kpis: {
+      immediateAmount: kpis.immediate_amount as number,
+      finalAmount: kpis.final_amount as number,
+      pvToTotalRatio: kpis.pv_to_total_ratio as number,
+    },
+  };
+}
 
 interface Step2UnifiedFormProps {
   step1Result: Step1Result;
@@ -168,8 +184,50 @@ export function Step2UnifiedForm({
         throw new Error(cashflowData.error || "현금흐름 분석 중 오류가 발생했습니다.");
       }
 
+      // API 응답을 camelCase로 변환
+      const apiData = cashflowData.data;
+      const transformedCashflowResult: Step2V2Result = {
+        basis: {
+          equityBasisValue: apiData.basis.equity_basis_value,
+          valuationBasis: apiData.basis.valuation_basis,
+          lockInYears: apiData.basis.lock_in_years,
+          discountRate: apiData.basis.discount_rate,
+          payout: {
+            upfrontPct: apiData.basis.payout.upfront_pct,
+            escrowPct: apiData.basis.payout.escrow_pct,
+            earnoutPct: apiData.basis.payout.earnout_pct,
+          },
+        },
+        inputsEcho: {
+          equityBasisValue: apiData.inputs_echo.equity_basis_value,
+          valuationBasis: apiData.inputs_echo.valuation_basis,
+          lockInYears: apiData.inputs_echo.lock_in_years,
+          equityScenarios: apiData.inputs_echo.equity_scenarios,
+          discountRate: apiData.inputs_echo.discount_rate,
+          payout: {
+            upfrontPct: apiData.inputs_echo.payout.upfront_pct,
+            escrowPct: apiData.inputs_echo.payout.escrow_pct,
+            earnoutPct: apiData.inputs_echo.payout.earnout_pct,
+          },
+          escrowScheduleMode: apiData.inputs_echo.escrow_schedule_mode,
+          escrowProbability: apiData.inputs_echo.escrow_probability,
+          earnoutScheduleMode: apiData.inputs_echo.earnout_schedule_mode,
+        },
+        scenarios: apiData.scenarios.map((s: Record<string, unknown>) => ({
+          equityPct: s.equity_pct,
+          totalProceeds: s.total_proceeds,
+          cases: {
+            guaranteed: transformCase((s.cases as Record<string, unknown>).guaranteed as Record<string, unknown>),
+            expected: transformCase((s.cases as Record<string, unknown>).expected as Record<string, unknown>),
+            best: transformCase((s.cases as Record<string, unknown>).best as Record<string, unknown>),
+          },
+        })),
+        warnings: apiData.warnings || [],
+        explainText: apiData.explain_text || "",
+      };
+
       // 현금흐름 결과 콜백
-      onCashflowResult(cashflowData.data);
+      onCashflowResult(transformedCashflowResult);
 
       // 2. 딜 시나리오 API 호출
       const equityMedian = (step1Result.equityValue.low + step1Result.equityValue.high) / 2;
