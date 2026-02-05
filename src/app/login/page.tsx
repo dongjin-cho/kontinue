@@ -63,8 +63,11 @@ function LoginContent() {
     setError(null);
 
     try {
-      // auth/callback으로 리다이렉트 후 next 파라미터로 최종 목적지 전달
-      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`;
+      // 쿠키에 리다이렉트 대상 저장 (Magic Link 클릭 후 callback에서 사용)
+      document.cookie = `auth_redirect=${encodeURIComponent(redirectTo)}; path=/; max-age=3600; SameSite=Lax`;
+      
+      // auth/callback으로 리다이렉트
+      const callbackUrl = `${window.location.origin}/auth/callback`;
       
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,

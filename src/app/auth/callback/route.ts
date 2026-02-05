@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -6,7 +7,16 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/app/step3";
+  
+  // 쿠키에서 리다이렉트 대상 읽기
+  const cookieStore = await cookies();
+  const authRedirectCookie = cookieStore.get("auth_redirect");
+  const redirectTo = authRedirectCookie?.value 
+    ? decodeURIComponent(authRedirectCookie.value) 
+    : "/app/step3";
+
+  // 유효한 경로인지 확인
+  const redirectPath = redirectTo.startsWith("/") ? redirectTo : "/app/step3";
 
   // PKCE flow: code 파라미터 처리
   if (code) {
@@ -14,9 +24,10 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
-      // 리다이렉트 대상이 유효한 경로인지 확인
-      const redirectPath = next.startsWith("/") ? next : "/app/step3";
-      return NextResponse.redirect(`${origin}${redirectPath}`);
+      // 쿠키 삭제 및 리다이렉트
+      const response = NextResponse.redirect(`${origin}${redirectPath}`);
+      response.cookies.delete("auth_redirect");
+      return response;
     }
     console.error("Auth code exchange error:", error);
   }
@@ -30,8 +41,10 @@ export async function GET(request: Request) {
     });
 
     if (!error) {
-      const redirectPath = next.startsWith("/") ? next : "/app/step3";
-      return NextResponse.redirect(`${origin}${redirectPath}`);
+      // 쿠키 삭제 및 리다이렉트
+      const response = NextResponse.redirect(`${origin}${redirectPath}`);
+      response.cookies.delete("auth_redirect");
+      return response;
     }
     console.error("Auth token verification error:", error);
   }
