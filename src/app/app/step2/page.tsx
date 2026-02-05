@@ -200,7 +200,7 @@ export default function Step2Page() {
                         재무제표를 업로드하시면 더 정확한 분석과 전문가 연결을 지원해 드립니다.
                       </p>
                     </div>
-                    <Link href="/login?redirect=/app/step3">
+                    <Link href="/app/step3">
                       <Button size="lg" className="bg-white text-slate-800 hover:bg-slate-100">
                         재무제표 업로드
                         <ArrowRight className="ml-2 h-4 w-4" />

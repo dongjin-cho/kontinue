@@ -2,16 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StepProgress } from "@/components/step3/StepProgress";
 import { UploadPanel } from "@/components/step3/UploadPanel";
 import { ExtractedForm } from "@/components/step3/ExtractedForm";
 import { CTAForm } from "@/components/step3/CTAForm";
+import { ContactForm } from "@/components/step3/ContactForm";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { Document } from "@/lib/supabase/types";
 import type { Step1Result } from "@/lib/valuation/types";
@@ -19,7 +18,6 @@ import type { Step2Result } from "@/lib/simulations/types";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 
 export default function Step3Page() {
-  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
 
   const [isLoading, setIsLoading] = React.useState(true);
@@ -28,31 +26,28 @@ export default function Step3Page() {
   const [step1Result, setStep1Result] = React.useState<Step1Result | null>(null);
   const [step2Result, setStep2Result] = React.useState<Step2Result | null>(null);
 
-  // 인증 확인 및 데이터 로드
+  // 데이터 로드 (인증 불필요)
   React.useEffect(() => {
     const init = async () => {
-      // 세션 확인
+      // 세션 확인 (선택적 - 있으면 userId 설정)
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login?redirect=/app/step3");
-        return;
-      }
+      if (user) {
+        setUserId(user.id);
 
-      setUserId(user.id);
+        // 기존 문서 조회 (가장 최근)
+        const { data: docs } = await supabase
+          .from("documents")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
-      // 기존 문서 조회 (가장 최근)
-      const { data: docs } = await supabase
-        .from("documents")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (docs && docs.length > 0) {
-        setDocument(docs[0]);
+        if (docs && docs.length > 0) {
+          setDocument(docs[0]);
+        }
       }
 
       // localStorage에서 Step1/Step2 결과 로드
@@ -76,7 +71,7 @@ export default function Step3Page() {
     };
 
     init();
-  }, [supabase, router]);
+  }, [supabase]);
 
   // 문서 업데이트 핸들러
   const handleDocumentChange = (doc: Document | null) => {
@@ -176,6 +171,11 @@ export default function Step3Page() {
 
           {/* 섹션 C: 중개법인 연결 CTA */}
           <CTAForm document={document} />
+
+          <Separator />
+
+          {/* 섹션 D: 연락처 입력 - 전문가 상담 신청 */}
+          <ContactForm />
         </div>
       </main>
 
