@@ -29,25 +29,34 @@ export default function Step3Page() {
   // 데이터 로드 (인증 불필요)
   React.useEffect(() => {
     const init = async () => {
-      // 세션 확인 (선택적 - 있으면 userId 설정)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        // 세션 확인 (선택적 - 있으면 userId 설정)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (user) {
-        setUserId(user.id);
+        if (user) {
+          setUserId(user.id);
 
-        // 기존 문서 조회 (가장 최근)
-        const { data: docs } = await supabase
-          .from("documents")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
+          // 기존 문서 조회 (가장 최근)
+          try {
+            const { data: docs } = await supabase
+              .from("documents")
+              .select("*")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(1);
 
-        if (docs && docs.length > 0) {
-          setDocument(docs[0]);
+            if (docs && docs.length > 0) {
+              setDocument(docs[0]);
+            }
+          } catch (docError) {
+            console.error("Document fetch error:", docError);
+          }
         }
+      } catch (authError) {
+        console.error("Auth error:", authError);
+        // 인증 에러가 있어도 페이지는 표시
       }
 
       // localStorage에서 Step1/Step2 결과 로드
