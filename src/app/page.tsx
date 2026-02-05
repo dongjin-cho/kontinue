@@ -50,13 +50,12 @@ export default function HomePage() {
         <div className="container px-4 py-20 md:py-28">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             {/* CI Logo */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-8">
               <Image
-                src="/kontinue-logo.png"
+                src="/kontinue-logo.svg"
                 alt="Kontinue"
-                width={120}
-                height={120}
-                className="rounded-full"
+                width={180}
+                height={180}
                 priority
               />
             </div>
