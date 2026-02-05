@@ -340,6 +340,9 @@ export function DealScenarioResults({ result, onSelectPreferred, selectedPreferr
               }
               isPreferred={selectedPreferred === scenario.code}
               onSelectPreferred={onSelectPreferred}
+              baseEquityMedian={baseEquityMedian}
+              feeRate={result.inputsEcho.feeRate || 0.03}
+              taxRate={result.inputsEcho.taxRate || 0}
             />
           ))}
         
@@ -361,6 +364,9 @@ export function DealScenarioResults({ result, onSelectPreferred, selectedPreferr
               }
               isPreferred={selectedPreferred === scenario.code}
               onSelectPreferred={onSelectPreferred}
+              baseEquityMedian={baseEquityMedian}
+              feeRate={result.inputsEcho.feeRate || 0.03}
+              taxRate={result.inputsEcho.taxRate || 0}
             />
           ))}
       </div>
@@ -377,6 +383,11 @@ export function DealScenarioResults({ result, onSelectPreferred, selectedPreferr
   );
 }
 
+// 숫자 포맷팅 함수
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("ko-KR").format(Math.round(value));
+}
+
 // 시나리오 상세 카드
 interface ScenarioDetailCardProps {
   scenario: ScenarioResult;
@@ -387,6 +398,9 @@ interface ScenarioDetailCardProps {
   onToggle: () => void;
   isPreferred?: boolean;
   onSelectPreferred?: (scenario: ScenarioResult) => void;
+  baseEquityMedian: number;
+  feeRate: number;
+  taxRate: number;
 }
 
 function ScenarioDetailCard({
@@ -398,6 +412,9 @@ function ScenarioDetailCard({
   onToggle,
   isPreferred,
   onSelectPreferred,
+  baseEquityMedian,
+  feeRate,
+  taxRate,
 }: ScenarioDetailCardProps) {
   const { breakdown, netBreakdown, eligible, eligibilityReasons, assumptions, pros, cons, explanation } = scenario;
 
@@ -644,6 +661,200 @@ function ScenarioDetailCard({
               </AlertDescription>
             </Alert>
           )}
+
+          <Separator />
+
+          {/* 1. 기본 딜 조건 설정 */}
+          {scenario.isFounderCashoutCalculable && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">1</span>
+                기본 딜 조건 설정
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border border-slate-200 rounded-lg">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">항목</th>
+                      <th className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50">수치</th>
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">비고</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="py-2 px-3 text-slate-700">기준 Equity Value</td>
+                      <td className="py-2 px-3 text-right font-mono font-medium">{formatKRWBillions(baseEquityMedian)}</td>
+                      <td className="py-2 px-3 text-slate-500 text-xs">{formatNumber(baseEquityMedian)} 원</td>
+                    </tr>
+                    {assumptions.targetSaleRatio !== undefined && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">매각 비율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(assumptions.targetSaleRatio * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">창업자 지분 중</td>
+                      </tr>
+                    )}
+                    {assumptions.rolloverRatio !== undefined && assumptions.rolloverRatio > 0 && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">롤오버 비율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(assumptions.rolloverRatio * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">지분 유지</td>
+                      </tr>
+                    )}
+                    {assumptions.cashRatio !== undefined && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">현금 지급 비율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(assumptions.cashRatio * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">즉시 현금</td>
+                      </tr>
+                    )}
+                    {assumptions.stockRatio !== undefined && assumptions.stockRatio > 0 && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">주식 지급 비율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(assumptions.stockRatio * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">인수기업 주식</td>
+                      </tr>
+                    )}
+                    {assumptions.earnoutRatio !== undefined && assumptions.earnoutRatio > 0 && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">Earnout 비율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(assumptions.earnoutRatio * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">성과 조건부</td>
+                      </tr>
+                    )}
+                    <tr className="border-b border-slate-100">
+                      <td className="py-2 px-3 text-slate-700">수수료율</td>
+                      <td className="py-2 px-3 text-right font-mono font-medium">{(feeRate * 100).toFixed(1)}%</td>
+                      <td className="py-2 px-3 text-slate-500 text-xs">자문/중개 수수료</td>
+                    </tr>
+                    {taxRate > 0 && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">세율</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium">{(taxRate * 100).toFixed(0)}%</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">양도소득세</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 2. 수령 스케줄 */}
+          {scenario.isFounderCashoutCalculable && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">2</span>
+                수령 스케줄
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border border-slate-200 rounded-lg">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">수령 시점</th>
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">유형</th>
+                      <th className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50">금액 (Gross)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {breakdown.immediateCash > 0 && (
+                      <tr className="border-b border-slate-100 bg-emerald-50">
+                        <td className="py-2 px-3 text-emerald-700 font-medium">클로징 시</td>
+                        <td className="py-2 px-3 text-emerald-700">즉시 현금</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
+                          {formatKRWBillions(breakdown.immediateCash)}
+                        </td>
+                      </tr>
+                    )}
+                    {breakdown.deferredCash > 0 && (
+                      <tr className="border-b border-slate-100 bg-blue-50">
+                        <td className="py-2 px-3 text-blue-700 font-medium">Lock-in 후</td>
+                        <td className="py-2 px-3 text-blue-700">지연 현금 (에스크로)</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-blue-700">
+                          {formatKRWBillions(breakdown.deferredCash)}
+                        </td>
+                      </tr>
+                    )}
+                    {breakdown.conditionalCashExpected > 0 && (
+                      <tr className="border-b border-slate-100 bg-amber-50">
+                        <td className="py-2 px-3 text-amber-700 font-medium">성과 달성 시</td>
+                        <td className="py-2 px-3 text-amber-700">조건부 (Earnout 기대치)</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-amber-700">
+                          {formatKRWBillions(breakdown.conditionalCashExpected)}
+                        </td>
+                      </tr>
+                    )}
+                    {breakdown.stockValue > 0 && (
+                      <tr className="border-b border-slate-100 bg-purple-50">
+                        <td className="py-2 px-3 text-purple-700 font-medium">클로징 시</td>
+                        <td className="py-2 px-3 text-purple-700">주식 가치</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-purple-700">
+                          {formatKRWBillions(breakdown.stockValue)}
+                        </td>
+                      </tr>
+                    )}
+                    {breakdown.retainedValue > 0 && (
+                      <tr className="border-b border-slate-100 bg-gray-50">
+                        <td className="py-2 px-3 text-gray-700 font-medium">유지</td>
+                        <td className="py-2 px-3 text-gray-700">롤오버 (지분 유지)</td>
+                        <td className="py-2 px-3 text-right font-mono font-bold text-gray-700">
+                          {formatKRWBillions(breakdown.retainedValue)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* 3. 최종 정산 */}
+          {scenario.isFounderCashoutCalculable && (
+            <div className="space-y-4">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">3</span>
+                최종 정산
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border border-slate-200 rounded-lg">
+                  <thead>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">항목</th>
+                      <th className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50">금액</th>
+                      <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">계산</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-slate-100">
+                      <td className="py-2 px-3 text-slate-700">① 총 수령액 (Gross)</td>
+                      <td className="py-2 px-3 text-right font-mono font-medium">{formatKRWBillions(netBreakdown.founderGross)}</td>
+                      <td className="py-2 px-3 text-slate-500 text-xs">{formatNumber(netBreakdown.founderGross)} 원</td>
+                    </tr>
+                    <tr className="border-b border-slate-100">
+                      <td className="py-2 px-3 text-slate-700">② 수수료 차감</td>
+                      <td className="py-2 px-3 text-right font-mono font-medium text-red-600">-{formatKRWBillions(netBreakdown.founderFee)}</td>
+                      <td className="py-2 px-3 text-slate-500 text-xs">{(feeRate * 100).toFixed(1)}% 적용</td>
+                    </tr>
+                    {taxRate > 0 && (
+                      <tr className="border-b border-slate-100">
+                        <td className="py-2 px-3 text-slate-700">③ 세금 차감</td>
+                        <td className="py-2 px-3 text-right font-mono font-medium text-red-600">-{formatKRWBillions(netBreakdown.founderTax)}</td>
+                        <td className="py-2 px-3 text-slate-500 text-xs">{(taxRate * 100).toFixed(0)}% 적용</td>
+                      </tr>
+                    )}
+                    <tr className="bg-emerald-50">
+                      <td className="py-3 px-3 text-emerald-700 font-semibold">④ 기대 순수익 (Net)</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700 text-lg">
+                        {formatKRWBillions(netBreakdown.founderNetExpected)}
+                      </td>
+                      <td className="py-3 px-3 text-emerald-600 text-xs">① - ② - ③</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <Separator />
 
           {/* 장단점 */}
           <div className="grid md:grid-cols-2 gap-4">
