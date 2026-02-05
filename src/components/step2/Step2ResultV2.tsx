@@ -4,221 +4,244 @@ import * as React from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoTooltip } from "@/components/ui/info-tooltip";
-import {
-  TrendingUp,
-  Wallet,
-  Clock,
-  AlertTriangle,
-  FileText,
-} from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { AlertTriangle } from "lucide-react";
 import type { Step2V2Result } from "@/lib/simulations/types_v2";
-import { formatKRWBillions } from "@/lib/valuation/formatter";
 
 interface Step2ResultV2Props {
   result: Step2V2Result;
 }
 
+// 숫자 포맷팅 함수
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("ko-KR").format(Math.round(value));
+}
+
+function formatBillions(value: number): string {
+  const billions = value / 100000000;
+  return `${billions.toFixed(1)}억`;
+}
+
 export function Step2ResultV2({ result }: Step2ResultV2Props) {
-  // 첫 번째 시나리오만 사용 (단일 지분)
   const scenario = result.scenarios[0];
-  const caseData = scenario?.cases.guaranteed; // 즉시 지급만 있으므로 guaranteed = expected = best
+  const caseData = scenario?.cases.expected; // expected 케이스 사용
 
   if (!scenario || !caseData) {
     return null;
   }
 
-  // 연도별 현금흐름 차트 데이터
-  const cashflowData = caseData.cashflows.map((cf, t) => ({
-    year: t === 0 ? "즉시" : `${t}년차`,
-    amount: cf,
-    isImmediate: t === 0,
-  }));
-
-  // 누적 현금흐름 계산
-  let cumulative = 0;
-  const cumulativeData = caseData.cashflows.map((cf, t) => {
-    cumulative += cf;
-    return {
-      year: t === 0 ? "즉시" : `${t}년차`,
-      cumulative,
-    };
-  });
+  const { basis } = result;
+  const totalValue = basis.equityBasisValue * (scenario.equityPct / 100);
+  const upfrontPct = basis.payout.upfrontPct;
+  const escrowPct = basis.payout.escrowPct;
+  const earnoutPct = basis.payout.earnoutPct;
+  
+  const upfrontAmount = totalValue * (upfrontPct / 100);
+  const escrowAmount = totalValue * (escrowPct / 100);
+  const earnoutAmount = totalValue * (earnoutPct / 100);
 
   return (
     <div className="space-y-6">
-      {/* 핵심 결과 */}
-      <Card className="border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-slate-800">분석 결과</CardTitle>
-          <CardDescription className="text-slate-500">
-            귀사의 거래 조건에 따른 예상 수령액 분석입니다.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* 주요 지표 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-white rounded-lg border border-slate-200">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <Wallet className="h-5 w-5" />
-                <span className="text-sm font-medium">총 예상 수령액</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">
-                {formatKRWBillions(caseData.totalNominal)}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                지분 {scenario.equityPct}% 기준
-              </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg border border-slate-200">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <TrendingUp className="h-5 w-5" />
-                <span className="text-sm font-medium inline-flex items-center">
-                  현재가치 (PV)
-                  <InfoTooltip term="현재가치" />
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">
-                {formatKRWBillions(caseData.pv)}
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                할인율 {(result.basis.discountRate * 100).toFixed(0)}% 적용
-              </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg border border-slate-200">
-              <div className="flex items-center gap-2 text-slate-600 mb-2">
-                <Clock className="h-5 w-5" />
-                <span className="text-sm font-medium">경영 참여 기간</span>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">
-                {result.basis.lockInYears}년
-              </p>
-              <p className="text-xs text-slate-500 mt-1">
-                인수 후 경영 참여 예상 기간
-              </p>
-            </div>
-          </div>
-
-          {/* 현금흐름 타임라인 */}
-          <div className="p-4 bg-slate-50 rounded-lg">
-            <h4 className="font-medium text-slate-700 mb-4">연도별 예상 수령액</h4>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cashflowData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="year" 
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                  />
-                  <YAxis
-                    tickFormatter={(value) =>
-                      value >= 100000000 ? `${(value / 100000000).toFixed(0)}억` : `${(value / 10000).toFixed(0)}만`
-                    }
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                  />
-                  <Tooltip
-                    formatter={(value) => [formatKRWBillions(Number(value)), "수령액"]}
-                    contentStyle={{ 
-                      backgroundColor: '#fff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                    {cashflowData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.isImmediate ? "#475569" : "#94a3b8"}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <p className="text-xs text-slate-500 mt-3">
-              * 즉시 수령액: {formatKRWBillions(caseData.kpis.immediateAmount)} / 
-              종료 시점 수령액: {formatKRWBillions(caseData.kpis.finalAmount)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 분석 요약 */}
+      {/* 1. 기본 딜 조건 설정 */}
       <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle className="text-slate-800 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-slate-600" />
-            분석 요약
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-slate-800">1. 기본 딜 조건 설정</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-slate-600 leading-relaxed">
-            {result.explainText || `
-              귀사의 기업가치 ${formatKRWBillions(result.basis.equityBasisValue)}를 기준으로,
-              지분 ${scenario.equityPct}%를 매각하실 경우 총 ${formatKRWBillions(caseData.totalNominal)}의 
-              수령이 예상됩니다. ${result.basis.lockInYears}년간의 경영 참여 기간과 
-              ${(result.basis.discountRate * 100).toFixed(0)}% 할인율을 적용한 현재가치는 
-              ${formatKRWBillions(caseData.pv)}입니다.
-            `}
-          </p>
-
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-            <div>
-              <p className="text-xs text-slate-500">PV/총액 비율</p>
-              <p className="font-semibold text-slate-800">
-                {(caseData.kpis.pvToTotalRatio * 100).toFixed(1)}%
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">시간가치 할인</p>
-              <p className="font-semibold text-slate-800">
-                {formatKRWBillions(caseData.totalNominal - caseData.pv)}
-              </p>
-            </div>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">항목</th>
+                  <th className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50">입력값</th>
+                  <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">비고</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">기업 가치 (Equity Value)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {formatNumber(basis.equityBasisValue)}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">({formatBillions(basis.equityBasisValue)})</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">매각 지분율</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {scenario.equityPct}%
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">창업자 보유 지분</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">현금 지급 비율 (Upfront)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {upfrontPct}%
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">즉시 지급</td>
+                </tr>
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">에스크로 비율 (Escrow)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {escrowPct}%
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">Lock-in 종료 시 지급</td>
+                </tr>
+                {earnoutPct > 0 && (
+                  <tr className="border-b border-slate-100">
+                    <td className="py-2.5 px-3 text-slate-700">언아웃 비율 (Earn-out)</td>
+                    <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                      {earnoutPct}%
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-500">성과 조건부</td>
+                  </tr>
+                )}
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">락인 기간 (Lock-in)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {basis.lockInYears}년
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500">경영 참여 기간</td>
+                </tr>
+                <tr className="border-b border-slate-100 bg-emerald-50">
+                  <td className="py-2.5 px-3 text-emerald-700 font-medium">현금 수령액 (확정)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-700">
+                    {formatNumber(upfrontAmount)}
+                  </td>
+                  <td className="py-2.5 px-3 text-emerald-600">{formatBillions(upfrontAmount)} (즉시 지급)</td>
+                </tr>
+                <tr className="bg-blue-50">
+                  <td className="py-2.5 px-3 text-blue-700 font-medium">에스크로 유보액</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-700">
+                    {formatNumber(escrowAmount)}
+                  </td>
+                  <td className="py-2.5 px-3 text-blue-600">{formatBillions(escrowAmount)} ({basis.lockInYears}년 후 지급)</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
 
-      {/* 참고 사항 */}
+      {/* 2. 연도별 수령 스케줄 */}
+      <Card className="border-slate-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-slate-800">2. 연도별 수령 스케줄</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-3 font-medium text-slate-600 bg-slate-50">시점</th>
+                  {caseData.cashflows.map((_, t) => (
+                    <th key={t} className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50 min-w-[100px]">
+                      {t === 0 ? "클로징 시" : `${t}년차`}
+                    </th>
+                  ))}
+                  <th className="text-right py-2 px-3 font-medium text-slate-600 bg-slate-50 min-w-[120px]">합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="py-2.5 px-3 text-slate-700">수령액</td>
+                  {caseData.cashflows.map((cf, t) => (
+                    <td key={t} className={`py-2.5 px-3 text-right font-mono ${cf > 0 ? "font-medium text-slate-800" : "text-slate-400"}`}>
+                      {cf > 0 ? formatBillions(cf) : "-"}
+                    </td>
+                  ))}
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-800">
+                    {formatBillions(caseData.totalNominal)}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 text-slate-700">현재가치 (PV)</td>
+                  {caseData.cashflows.map((cf, t) => {
+                    const pv = cf / Math.pow(1 + basis.discountRate, t);
+                    return (
+                      <td key={t} className={`py-2.5 px-3 text-right font-mono ${cf > 0 ? "text-slate-600" : "text-slate-400"}`}>
+                        {cf > 0 ? formatBillions(pv) : "-"}
+                      </td>
+                    );
+                  })}
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-600">
+                    {formatBillions(caseData.pv)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-slate-500 mt-3">
+            * 현재가치는 할인율 {(basis.discountRate * 100).toFixed(0)}%를 적용하여 계산됨
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* 3. 최종 정산 */}
       <Card className="border-slate-200 bg-slate-50">
-        <CardContent className="pt-6">
-          <h4 className="font-medium text-slate-700 mb-3">분석 가정</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-slate-500">기준 가치</p>
-              <p className="font-medium text-slate-700">
-                {formatKRWBillions(result.basis.equityBasisValue)}
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500">매각 지분</p>
-              <p className="font-medium text-slate-700">{scenario.equityPct}%</p>
-            </div>
-            <div>
-              <p className="text-slate-500">경영 참여</p>
-              <p className="font-medium text-slate-700">{result.basis.lockInYears}년</p>
-            </div>
-            <div>
-              <p className="text-slate-500">할인율</p>
-              <p className="font-medium text-slate-700">{(result.basis.discountRate * 100).toFixed(0)}%</p>
-            </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base text-slate-800">3. 최종 정산</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-2 px-3 font-medium text-slate-600 bg-white">항목</th>
+                  <th className="text-right py-2 px-3 font-medium text-slate-600 bg-white">결과값</th>
+                  <th className="text-left py-2 px-3 font-medium text-slate-600 bg-white">적용 수식</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-b border-slate-100 bg-white">
+                  <td className="py-2.5 px-3 text-slate-700">① 즉시 현금 수령 (Upfront)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-emerald-600">
+                    {formatBillions(upfrontAmount)}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500 font-mono text-xs">
+                    {formatNumber(upfrontAmount)}
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-100 bg-white">
+                  <td className="py-2.5 px-3 text-slate-700">② 에스크로 수령 ({basis.lockInYears}년 후)</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-blue-600">
+                    {formatBillions(escrowAmount)}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500 font-mono text-xs">
+                    {formatNumber(escrowAmount)}
+                  </td>
+                </tr>
+                <tr className="border-b border-slate-100 bg-white">
+                  <td className="py-2.5 px-3 text-slate-700">③ 명목 총 수령액</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-slate-800">
+                    {formatBillions(caseData.totalNominal)}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500 font-mono text-xs">
+                    ① + ②
+                  </td>
+                </tr>
+                <tr className="bg-blue-50">
+                  <td className="py-3 px-3 text-blue-700 font-semibold">④ 현재가치 합계 (PV)</td>
+                  <td className="py-3 px-3 text-right font-mono font-bold text-blue-700 text-lg">
+                    {formatBillions(caseData.pv)}
+                  </td>
+                  <td className="py-3 px-3 text-blue-600 text-xs">
+                    할인율 {(basis.discountRate * 100).toFixed(0)}% 적용
+                  </td>
+                </tr>
+                <tr className="bg-amber-50">
+                  <td className="py-2.5 px-3 text-amber-700">시간가치 차이</td>
+                  <td className="py-2.5 px-3 text-right font-mono font-medium text-amber-600">
+                    -{formatBillions(caseData.totalNominal - caseData.pv)}
+                  </td>
+                  <td className="py-2.5 px-3 text-amber-600 text-xs">
+                    ({(caseData.kpis.pvToTotalRatio * 100).toFixed(1)}% 보존율)
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
@@ -236,10 +259,6 @@ export function Step2ResultV2({ result }: Step2ResultV2Props) {
           </AlertDescription>
         </Alert>
       )}
-
-      <p className="text-xs text-slate-400 text-center">
-        * 아래 딜 구조 시나리오를 완료하시면 다음 단계로 진행할 수 있습니다.
-      </p>
     </div>
   );
 }
