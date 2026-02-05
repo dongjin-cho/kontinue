@@ -3,15 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, AlertCircle, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
-import { Step2FormV2 } from "@/components/step2/Step2FormV2";
+import { Step2UnifiedForm } from "@/components/step2/Step2UnifiedForm";
 import { Step2ResultV2 } from "@/components/step2/Step2ResultV2";
-import { DealScenarioForm } from "@/components/deal/DealScenarioForm";
 import { DealScenarioResults } from "@/components/deal/DealScenarioResults";
 import type { Step1Result } from "@/lib/valuation/types";
 import type { Step2V2Result } from "@/lib/simulations/types_v2";
@@ -25,10 +23,8 @@ export default function Step2Page() {
   const [dealResult, setDealResult] = React.useState<DealScenarioOutput | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const resultRef = React.useRef<HTMLDivElement>(null);
-  const dealFormRef = React.useRef<HTMLDivElement>(null);
-  const dealResultRef = React.useRef<HTMLDivElement>(null);
 
-  // Load Step1 result and Step2 saved result from localStorage
+  // Load Step1 result and saved results from localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       const savedStep1 = localStorage.getItem("sme_step1_result");
@@ -75,32 +71,22 @@ export default function Step2Page() {
     }
   }, [router]);
 
-  const handleResult = (newResult: Step2V2Result) => {
+  const handleCashflowResult = (newResult: Step2V2Result) => {
     setResult(newResult);
-    // Save to localStorage
     if (typeof window !== "undefined") {
       localStorage.setItem("sme_step2_result_v2", JSON.stringify(newResult));
     }
-    // Scroll to result
-    setTimeout(() => {
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
   };
 
   const handleDealResult = (newResult: DealScenarioOutput) => {
     setDealResult(newResult);
-    // Save to localStorage
     if (typeof window !== "undefined") {
       localStorage.setItem("sme_deal_scenarios_result_v1", JSON.stringify(newResult));
     }
-    // Scroll to result
+    // 결과가 나오면 스크롤
     setTimeout(() => {
-      dealResultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
-  };
-
-  const scrollToDealSection = () => {
-    dealFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (isLoading) {
@@ -152,7 +138,7 @@ export default function Step2Page() {
 
       {/* Main Content */}
       <main className="container py-8 px-4 max-w-4xl mx-auto">
-        <div className="space-y-12">
+        <div className="space-y-8">
           {/* Step1 결과 요약 */}
           <Card className="border-slate-200 bg-white">
             <CardHeader className="pb-2">
@@ -175,83 +161,56 @@ export default function Step2Page() {
             </CardContent>
           </Card>
 
-          {/* Section 1: 현금흐름 분석 */}
-          <section className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-sm">
-                1
+          {/* 통합 입력 폼 */}
+          <Step2UnifiedForm 
+            step1Result={step1Result} 
+            onCashflowResult={handleCashflowResult}
+            onDealResult={handleDealResult} 
+          />
+          
+          {/* 분석 결과 - 두 결과가 모두 있을 때만 표시 */}
+          {result && dealResult && (
+            <div ref={resultRef} className="scroll-mt-20 space-y-8">
+              {/* 분석 결과 헤더 */}
+              <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-800">분석 결과</h2>
+                  <p className="text-sm text-slate-500">현금흐름 분석 및 딜 구조 시나리오</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">현금흐름 분석</h2>
-                <p className="text-sm text-slate-500">거래 조건에 따른 예상 수령액을 분석합니다</p>
-              </div>
-            </div>
 
-            <Step2FormV2 step1Result={step1Result} onResult={handleResult} />
-            
-            {result && (
-              <div ref={resultRef} className="scroll-mt-20">
-                <Step2ResultV2 result={result} />
-              </div>
-            )}
-          </section>
+              {/* 현금흐름 분석 결과 */}
+              <Step2ResultV2 result={result} />
 
-          {/* Divider with scroll hint */}
-          <div className="relative py-8">
-            <Separator className="bg-slate-200" />
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-50 px-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-full border-slate-300 text-slate-500 hover:text-slate-700"
-                onClick={scrollToDealSection}
-              >
-                <ChevronDown className="h-4 w-4 mr-1" />
-                딜 구조 시나리오
-              </Button>
-            </div>
-          </div>
+              {/* 딜 시나리오 결과 */}
+              <DealScenarioResults result={dealResult} />
 
-          {/* Section 2: 딜 구조 시나리오 */}
-          <section ref={dealFormRef} className="space-y-6 scroll-mt-20">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-semibold text-sm">
-                2
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-slate-800">딜 구조 시나리오</h2>
-                <p className="text-sm text-slate-500">다양한 거래 구조별 예상 수령액을 비교합니다</p>
-              </div>
-            </div>
-
-            <DealScenarioForm step1Result={step1Result} onResult={handleDealResult} />
-            
-            {dealResult && (
-              <div ref={dealResultRef} className="scroll-mt-20 space-y-6">
-                <DealScenarioResults result={dealResult} />
-                
-                {/* Step3로 이동 CTA */}
-                <Card className="bg-slate-800 text-white border-0">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold mb-1">다음 단계</h3>
-                        <p className="text-sm text-slate-300">
-                          재무제표를 업로드하시면 더 정확한 분석과 전문가 연결을 지원해 드립니다.
-                        </p>
-                      </div>
-                      <Link href="/app/step3">
-                        <Button size="lg" className="bg-white text-slate-800 hover:bg-slate-100">
-                          재무제표 업로드
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
+              {/* Step3로 이동 CTA */}
+              <Card className="bg-slate-800 text-white border-0">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-1">다음 단계</h3>
+                      <p className="text-sm text-slate-300">
+                        재무제표를 업로드하시면 더 정확한 분석과 전문가 연결을 지원해 드립니다.
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </section>
+                    <Link href="/login?redirect=/app/step3">
+                      <Button size="lg" className="bg-white text-slate-800 hover:bg-slate-100">
+                        재무제표 업로드
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
 
