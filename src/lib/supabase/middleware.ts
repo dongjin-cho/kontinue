@@ -29,18 +29,8 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // 세션 갱신
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Step3는 로그인 필수
-  if (request.nextUrl.pathname.startsWith("/app/step3") && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
+  // 세션 갱신 (쿠키 유지 목적)
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
