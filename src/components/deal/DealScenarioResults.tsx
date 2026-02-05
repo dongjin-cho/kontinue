@@ -11,8 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import {
   Trophy,
   CheckCircle2,
@@ -148,32 +146,21 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <Label className="text-sm">표시 기준:</Label>
-            <RadioGroup
-              value={viewMode}
-              onValueChange={(v) => setViewMode(v as ViewMode)}
-              className="flex gap-4"
-            >
-              <div className="flex items-center gap-1">
-                <RadioGroupItem value="beforeFees" id="view-gross" />
-                <Label htmlFor="view-gross" className="text-xs cursor-pointer">
-                  수수료 전
-                </Label>
-              </div>
-              <div className="flex items-center gap-1">
-                <RadioGroupItem value="afterFees" id="view-fee" />
-                <Label htmlFor="view-fee" className="text-xs cursor-pointer">
-                  수수료 후
-                </Label>
-              </div>
-              <div className="flex items-center gap-1">
-                <RadioGroupItem value="afterTax" id="view-tax" />
-                <Label htmlFor="view-tax" className="text-xs cursor-pointer">
-                  세후
-                </Label>
-              </div>
-            </RadioGroup>
+          <div className="flex items-center gap-4 text-sm text-slate-600">
+            <span>표시 기준:</span>
+            <span className="font-medium text-slate-800">
+              {viewMode === "beforeFees" && "수수료 전"}
+              {viewMode === "afterFees" && "수수료 후"}
+              {viewMode === "afterTax" && "세후"}
+            </span>
+            <span className="text-slate-400">|</span>
+            <span>수수료율: {((result.inputsEcho.feeRate || 0.03) * 100).toFixed(1)}%</span>
+            {result.inputsEcho.taxRate > 0 && (
+              <>
+                <span className="text-slate-400">|</span>
+                <span>세율: {(result.inputsEcho.taxRate * 100).toFixed(0)}%</span>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -158,6 +158,10 @@ export function Step2UnifiedForm({
 
     try {
       // 1. 현금흐름 분석 API 호출
+      // Lock-in 기간에 따라 지급 구조 설정 (80% 즉시, 20% Lock-in 종료 시)
+      const upfrontPct = 80;
+      const escrowPct = 20;
+      
       const cashflowResponse = await fetch("/api/simulate/step2-v2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,8 +171,8 @@ export function Step2UnifiedForm({
           lock_in_years: formData.lockInYears,
           equity_scenarios: [formData.equityPct],
           payout: {
-            upfront_pct: 100,
-            escrow_pct: 0,
+            upfront_pct: upfrontPct,
+            escrow_pct: escrowPct,
             earnout_pct: 0,
           },
           discount_rate: formData.discountRate / 100,
