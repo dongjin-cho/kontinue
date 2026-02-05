@@ -97,8 +97,8 @@ const initialFormData: FormData = {
   companyProfile: "",
   feeRate: 3,
   taxRate: 22,
-  applyTax: false,
-  earnoutProbability: 50,
+  applyTax: true, // 세율 22% 디폴트 적용
+  earnoutProbability: 100, // Earnout 달성 100% 고정
 };
 
 export function Step2UnifiedForm({
@@ -573,18 +573,12 @@ export function Step2UnifiedForm({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-slate-600">
-                      Earnout 달성 확률 (%)
+                      Earnout 달성 확률
                       <InfoTooltip term="Earnout" />
                     </Label>
-                    <Input
-                      type="number"
-                      value={formData.earnoutProbability}
-                      onChange={(e) => updateField("earnoutProbability", Number(e.target.value))}
-                      min={0}
-                      max={100}
-                      step={5}
-                      className="h-10 border-slate-200"
-                    />
+                    <div className="h-10 px-3 flex items-center text-sm text-slate-600 bg-slate-100 rounded-md border border-slate-200">
+                      100% (고정)
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs text-slate-600">할인율 (%)</Label>

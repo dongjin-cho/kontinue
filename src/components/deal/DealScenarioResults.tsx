@@ -45,6 +45,8 @@ import { cn } from "@/lib/utils";
 
 interface DealScenarioResultsProps {
   result: DealScenarioOutput;
+  onSelectPreferred?: (scenario: ScenarioResult) => void;
+  selectedPreferred?: ScenarioCode | null;
 }
 
 type ViewMode = "afterFees" | "beforeFees" | "afterTax";
@@ -58,11 +60,20 @@ const CHART_COLORS = {
   corporateCash: "#06b6d4", // cyan
 };
 
-export function DealScenarioResults({ result }: DealScenarioResultsProps) {
+export function DealScenarioResults({ result, onSelectPreferred, selectedPreferred }: DealScenarioResultsProps) {
   const [viewMode, setViewMode] = React.useState<ViewMode>("afterFees");
-  const [selectedScenario, setSelectedScenario] = React.useState<ScenarioCode | null>(null);
+  // Top1만 기본으로 펼침
+  const [expandedScenario, setExpandedScenario] = React.useState<ScenarioCode | null>(null);
+  const [showAllScenarios, setShowAllScenarios] = React.useState(false);
 
   const { scenarios, top3, scoring, warnings, baseEquityMedian } = result;
+
+  // 초기화: Top1 시나리오를 펼침
+  React.useEffect(() => {
+    if (top3.length > 0 && expandedScenario === null) {
+      setExpandedScenario(top3[0]);
+    }
+  }, [top3, expandedScenario]);
 
   // 시나리오 정렬: Top3 먼저, 나머지는 점수순
   const sortedScenarios = React.useMemo(() => {
@@ -172,24 +183,27 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
             <Trophy className="h-5 w-5 text-yellow-500" />
             추천 딜 구조 Top 3
           </CardTitle>
+          <CardDescription>
+            선호하는 시나리오를 선택하면 다음 단계에서 요약 정보로 표시됩니다.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             {top3.map((code, idx) => {
               const scenario = scenarios.find((s) => s.code === code);
               if (!scenario) return null;
+              const isSelected = selectedPreferred === code;
 
               return (
                 <div
                   key={code}
                   className={cn(
-                    "p-4 rounded-lg border-2 cursor-pointer transition-all",
+                    "p-4 rounded-lg border-2 transition-all",
                     idx === 0
                       ? "border-yellow-500 bg-yellow-50"
-                      : "border-muted bg-background hover:border-primary/50",
-                    selectedScenario === code && "ring-2 ring-primary"
+                      : "border-muted bg-background",
+                    isSelected && "ring-2 ring-emerald-500 border-emerald-500"
                   )}
-                  onClick={() => setSelectedScenario(code === selectedScenario ? null : code)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold">{scenario.name}</span>
@@ -205,6 +219,29 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {scenario.explanation.slice(0, 60)}...
                   </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedScenario(expandedScenario === code ? null : code)}
+                      className="flex-1 text-xs py-1.5 px-2 rounded border border-slate-300 hover:bg-slate-100 text-slate-600"
+                    >
+                      {expandedScenario === code ? "접기" : "상세보기"}
+                    </button>
+                    {onSelectPreferred && (
+                      <button
+                        type="button"
+                        onClick={() => onSelectPreferred(scenario)}
+                        className={cn(
+                          "flex-1 text-xs py-1.5 px-2 rounded font-medium transition-colors",
+                          isSelected
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-800 text-white hover:bg-slate-700"
+                        )}
+                      >
+                        {isSelected ? "✓ 선택됨" : "선택"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -270,22 +307,62 @@ export function DealScenarioResults({ result }: DealScenarioResultsProps) {
 
       {/* 시나리오 상세 카드 */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold">전체 시나리오 상세</h2>
-        {sortedScenarios.map((scenario) => (
-          <ScenarioDetailCard
-            key={scenario.code}
-            scenario={scenario}
-            rank={top3.indexOf(scenario.code)}
-            score={scoring[scenario.code]}
-            viewMode={viewMode}
-            isExpanded={selectedScenario === scenario.code}
-            onToggle={() =>
-              setSelectedScenario(
-                selectedScenario === scenario.code ? null : scenario.code
-              )
-            }
-          />
-        ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">전체 시나리오 상세</h2>
+          <button
+            type="button"
+            onClick={() => setShowAllScenarios(!showAllScenarios)}
+            className="text-sm text-slate-600 hover:text-slate-800 flex items-center gap-1"
+          >
+            {showAllScenarios ? (
+              <>접기</>
+            ) : (
+              <>모두 펼치기 ({sortedScenarios.length}개)</>
+            )}
+          </button>
+        </div>
+        
+        {/* Top3 시나리오 상세 (항상 표시) */}
+        {sortedScenarios
+          .filter((s) => top3.includes(s.code))
+          .map((scenario) => (
+            <ScenarioDetailCard
+              key={scenario.code}
+              scenario={scenario}
+              rank={top3.indexOf(scenario.code)}
+              score={scoring[scenario.code]}
+              viewMode={viewMode}
+              isExpanded={expandedScenario === scenario.code}
+              onToggle={() =>
+                setExpandedScenario(
+                  expandedScenario === scenario.code ? null : scenario.code
+                )
+              }
+              isPreferred={selectedPreferred === scenario.code}
+              onSelectPreferred={onSelectPreferred}
+            />
+          ))}
+        
+        {/* 나머지 시나리오 (접기/펼치기) */}
+        {showAllScenarios && sortedScenarios
+          .filter((s) => !top3.includes(s.code))
+          .map((scenario) => (
+            <ScenarioDetailCard
+              key={scenario.code}
+              scenario={scenario}
+              rank={top3.indexOf(scenario.code)}
+              score={scoring[scenario.code]}
+              viewMode={viewMode}
+              isExpanded={expandedScenario === scenario.code}
+              onToggle={() =>
+                setExpandedScenario(
+                  expandedScenario === scenario.code ? null : scenario.code
+                )
+              }
+              isPreferred={selectedPreferred === scenario.code}
+              onSelectPreferred={onSelectPreferred}
+            />
+          ))}
       </div>
 
       {/* 고지 */}
@@ -308,6 +385,8 @@ interface ScenarioDetailCardProps {
   viewMode: ViewMode;
   isExpanded: boolean;
   onToggle: () => void;
+  isPreferred?: boolean;
+  onSelectPreferred?: (scenario: ScenarioResult) => void;
 }
 
 function ScenarioDetailCard({
@@ -317,6 +396,8 @@ function ScenarioDetailCard({
   viewMode,
   isExpanded,
   onToggle,
+  isPreferred,
+  onSelectPreferred,
 }: ScenarioDetailCardProps) {
   const { breakdown, netBreakdown, eligible, eligibilityReasons, assumptions, pros, cons, explanation } = scenario;
 
@@ -331,7 +412,8 @@ function ScenarioDetailCard({
     <Card className={cn(
       "transition-all",
       rank >= 0 && rank < 3 && "border-primary/30",
-      !eligible && "opacity-60"
+      !eligible && "opacity-60",
+      isPreferred && "ring-2 ring-emerald-500 border-emerald-500"
     )}>
       <CardHeader
         className="cursor-pointer"
@@ -341,6 +423,12 @@ function ScenarioDetailCard({
           <div className="flex items-center gap-3">
             <CardTitle className="text-lg">{scenario.name}</CardTitle>
             {getRankBadge()}
+            {isPreferred && (
+              <Badge className="bg-emerald-500 text-white">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                선호
+              </Badge>
+            )}
             {eligible ? (
               <Badge variant="outline" className="text-green-600 border-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -353,22 +441,41 @@ function ScenarioDetailCard({
               </Badge>
             )}
           </div>
-          <div className="text-right">
-            {scenario.isFounderCashoutCalculable ? (
-              <>
-                <div className="text-xl font-bold text-primary">
-                  {formatKRWBillions(netBreakdown.founderNetExpected)}
-                </div>
-                <div className="text-xs text-muted-foreground">기대 순수익</div>
-              </>
-            ) : (
-              <>
-                <div className="text-lg text-muted-foreground">
-                  {formatKRWBillions(breakdown.corporateCashIn || 0)}
-                </div>
-                <div className="text-xs text-muted-foreground">법인 유입액</div>
-              </>
+          <div className="flex items-center gap-4">
+            {onSelectPreferred && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectPreferred(scenario);
+                }}
+                className={cn(
+                  "text-xs py-1.5 px-3 rounded font-medium transition-colors",
+                  isPreferred
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-800 text-white hover:bg-slate-700"
+                )}
+              >
+                {isPreferred ? "✓ 선택됨" : "선택"}
+              </button>
             )}
+            <div className="text-right">
+              {scenario.isFounderCashoutCalculable ? (
+                <>
+                  <div className="text-xl font-bold text-primary">
+                    {formatKRWBillions(netBreakdown.founderNetExpected)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">기대 순수익</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-lg text-muted-foreground">
+                    {formatKRWBillions(breakdown.corporateCashIn || 0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">법인 유입액</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>

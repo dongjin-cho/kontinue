@@ -13,7 +13,7 @@ import { Step2ResultV2 } from "@/components/step2/Step2ResultV2";
 import { DealScenarioResults } from "@/components/deal/DealScenarioResults";
 import type { Step1Result } from "@/lib/valuation/types";
 import type { Step2V2Result } from "@/lib/simulations/types_v2";
-import type { DealScenarioOutput } from "@/lib/deal/scenarios";
+import type { DealScenarioOutput, ScenarioResult, ScenarioCode } from "@/lib/deal/scenarios";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 
 export default function Step2Page() {
@@ -21,6 +21,7 @@ export default function Step2Page() {
   const [step1Result, setStep1Result] = React.useState<Step1Result | null>(null);
   const [result, setResult] = React.useState<Step2V2Result | null>(null);
   const [dealResult, setDealResult] = React.useState<DealScenarioOutput | null>(null);
+  const [preferredScenario, setPreferredScenario] = React.useState<ScenarioResult | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const resultRef = React.useRef<HTMLDivElement>(null);
 
@@ -67,9 +68,34 @@ export default function Step2Page() {
         }
       }
 
+      // 선호 시나리오 로드
+      const savedPreferred = localStorage.getItem("sme_preferred_scenario");
+      if (savedPreferred) {
+        try {
+          setPreferredScenario(JSON.parse(savedPreferred));
+        } catch {
+          // ignore
+        }
+      }
+
       setIsLoading(false);
     }
   }, [router]);
+
+  const handlePreferredSelect = (scenario: ScenarioResult) => {
+    // 같은 시나리오 클릭하면 선택 해제
+    if (preferredScenario?.code === scenario.code) {
+      setPreferredScenario(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sme_preferred_scenario");
+      }
+    } else {
+      setPreferredScenario(scenario);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("sme_preferred_scenario", JSON.stringify(scenario));
+      }
+    }
+  };
 
   const handleCashflowResult = (newResult: Step2V2Result) => {
     setResult(newResult);
@@ -188,7 +214,11 @@ export default function Step2Page() {
               <Step2ResultV2 result={result} />
 
               {/* 딜 시나리오 결과 */}
-              <DealScenarioResults result={dealResult} />
+              <DealScenarioResults 
+                result={dealResult} 
+                onSelectPreferred={handlePreferredSelect}
+                selectedPreferred={preferredScenario?.code || null}
+              />
 
               {/* Step3로 이동 CTA */}
               <Card className="bg-slate-800 text-white border-0">

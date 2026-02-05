@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
@@ -48,6 +49,18 @@ export default function HomePage() {
       <section className="bg-gradient-to-b from-slate-900 to-slate-800 text-white">
         <div className="container px-4 py-20 md:py-28">
           <div className="max-w-3xl mx-auto text-center space-y-6">
+            {/* CI Logo */}
+            <div className="flex justify-center mb-6">
+              <Image
+                src="/kontinue-logo.png"
+                alt="Kontinue"
+                width={120}
+                height={120}
+                className="rounded-full"
+                priority
+              />
+            </div>
+            
             <p className="text-slate-400 text-sm tracking-widest uppercase">
               Private Valuation Advisory
             </p>

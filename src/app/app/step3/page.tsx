@@ -2,90 +2,52 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trophy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StepProgress } from "@/components/step3/StepProgress";
-import { UploadPanel } from "@/components/step3/UploadPanel";
-import { ExtractedForm } from "@/components/step3/ExtractedForm";
-import { CTAForm } from "@/components/step3/CTAForm";
 import { ContactForm } from "@/components/step3/ContactForm";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import type { Document } from "@/lib/supabase/types";
 import type { Step1Result } from "@/lib/valuation/types";
 import type { Step2Result } from "@/lib/simulations/types";
+import type { ScenarioResult } from "@/lib/deal/scenarios";
 import { formatKRWBillions } from "@/lib/valuation/formatter";
 
 export default function Step3Page() {
-  const supabase = getSupabaseBrowserClient();
 
   const [isLoading, setIsLoading] = React.useState(true);
-  const [userId, setUserId] = React.useState<string | null>(null);
-  const [document, setDocument] = React.useState<Document | null>(null);
   const [step1Result, setStep1Result] = React.useState<Step1Result | null>(null);
   const [step2Result, setStep2Result] = React.useState<Step2Result | null>(null);
+  const [preferredScenario, setPreferredScenario] = React.useState<ScenarioResult | null>(null);
 
   // 데이터 로드 (인증 불필요)
   React.useEffect(() => {
-    const init = async () => {
-      try {
-        // 세션 확인 (선택적 - 있으면 userId 설정)
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+    // localStorage에서 Step1/Step2 결과 및 선호 시나리오 로드
+    if (typeof window !== "undefined") {
+      const step1Data = localStorage.getItem("sme_step1_result");
+      const step2Data = localStorage.getItem("sme_step2_result");
+      const preferredData = localStorage.getItem("sme_preferred_scenario");
 
-        if (user) {
-          setUserId(user.id);
-
-          // 기존 문서 조회 (가장 최근)
-          try {
-            const { data: docs } = await supabase
-              .from("documents")
-              .select("*")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(1);
-
-            if (docs && docs.length > 0) {
-              setDocument(docs[0]);
-            }
-          } catch (docError) {
-            console.error("Document fetch error:", docError);
-          }
-        }
-      } catch (authError) {
-        console.error("Auth error:", authError);
-        // 인증 에러가 있어도 페이지는 표시
+      if (step1Data) {
+        try {
+          setStep1Result(JSON.parse(step1Data));
+        } catch {}
       }
-
-      // localStorage에서 Step1/Step2 결과 로드
-      if (typeof window !== "undefined") {
-        const step1Data = localStorage.getItem("sme_step1_result");
-        const step2Data = localStorage.getItem("sme_step2_result");
-
-        if (step1Data) {
-          try {
-            setStep1Result(JSON.parse(step1Data));
-          } catch {}
-        }
-        if (step2Data) {
-          try {
-            setStep2Result(JSON.parse(step2Data));
-          } catch {}
-        }
+      if (step2Data) {
+        try {
+          setStep2Result(JSON.parse(step2Data));
+        } catch {}
       }
+      if (preferredData) {
+        try {
+          setPreferredScenario(JSON.parse(preferredData));
+        } catch {}
+      }
+    }
 
-      setIsLoading(false);
-    };
-
-    init();
-  }, [supabase]);
-
-  // 문서 업데이트 핸들러
-  const handleDocumentChange = (doc: Document | null) => {
-    setDocument(doc);
-  };
+    setIsLoading(false);
+  }, []);
 
   if (isLoading) {
     return (
@@ -120,17 +82,17 @@ export default function Step3Page() {
           <StepProgress currentStep={3} />
 
           {/* Step1/2 결과 요약 */}
-          {(step1Result || step2Result) && (
-            <Card className="border-primary/20 bg-primary/5">
+          {(step1Result || step2Result || preferredScenario) && (
+            <Card className="border-slate-200 bg-slate-50">
               <CardHeader className="pb-2">
-                <CardDescription>이전 단계 결과 요약</CardDescription>
+                <CardDescription className="text-slate-500">이전 단계 결과 요약</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   {step1Result && step1Result.canEvaluate && (
                     <div>
-                      <p className="text-muted-foreground">예상 지분가치</p>
-                      <p className="font-medium">
+                      <p className="text-slate-500">예상 지분가치</p>
+                      <p className="font-semibold text-slate-800">
                         {formatKRWBillions(step1Result.equityValue.low)} ~{" "}
                         {formatKRWBillions(step1Result.equityValue.high)} 원
                       </p>
@@ -138,8 +100,8 @@ export default function Step3Page() {
                   )}
                   {step2Result && step2Result.scenarios.length > 0 && (
                     <div>
-                      <p className="text-muted-foreground">현재가치 (PV)</p>
-                      <p className="font-medium">
+                      <p className="text-slate-500">현재가치 (PV)</p>
+                      <p className="font-semibold text-slate-800">
                         {formatKRWBillions(
                           step2Result.scenarios.find((s) => s.equityPct === 100)
                             ?.pv ||
@@ -152,38 +114,46 @@ export default function Step3Page() {
                     </div>
                   )}
                 </div>
+
+                {/* 선호 시나리오 표시 */}
+                {preferredScenario && (
+                  <>
+                    <Separator className="bg-slate-200" />
+                    <div className="p-4 bg-white rounded-lg border border-emerald-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Trophy className="h-4 w-4 text-yellow-500" />
+                        <span className="text-sm font-medium text-slate-700">선호 딜 구조</span>
+                        <Badge className="bg-emerald-500 text-white text-xs">
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          선택됨
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-slate-800">{preferredScenario.name}</p>
+                          <p className="text-xs text-slate-500 line-clamp-1">
+                            {preferredScenario.explanation?.slice(0, 80)}...
+                          </p>
+                        </div>
+                        {preferredScenario.isFounderCashoutCalculable && (
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-emerald-600">
+                              {formatKRWBillions(preferredScenario.netBreakdown?.founderNetExpected || 0)}
+                            </p>
+                            <p className="text-xs text-slate-500">기대 순수익</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}
 
           <Separator />
 
-          {/* 섹션 A: 재무제표 업로드 */}
-          {userId && (
-            <UploadPanel
-              userId={userId}
-              document={document}
-              onDocumentChange={handleDocumentChange}
-            />
-          )}
-
-          {/* 섹션 B: 추출값 검증/수정 */}
-          {document &&
-            (document.status === "parsed" || document.status === "verified") && (
-              <ExtractedForm
-                document={document}
-                onVerified={handleDocumentChange}
-              />
-            )}
-
-          <Separator />
-
-          {/* 섹션 C: 중개법인 연결 CTA */}
-          <CTAForm document={document} />
-
-          <Separator />
-
-          {/* 섹션 D: 연락처 입력 - 전문가 상담 신청 */}
+          {/* 전문가 상담 및 중개법인 연결 (통합 폼) */}
           <ContactForm />
         </div>
       </main>
