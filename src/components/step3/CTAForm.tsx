@@ -275,7 +275,7 @@ export function CTAForm({ document }: CTAFormProps) {
                 <span className="text-destructive">*</span>{" "}
                 재무정보 및 시뮬레이션 결과를 중개법인에 전달하는 것에
                 동의합니다. 전달되는 정보에는 입력하신 재무제표 데이터, 기업가치
-                평가 결과, 현금흐름 시뮬레이션 결과가 포함됩니다.
+                평가 결과, 매각 시뮬레이션 결과가 포함됩니다.
               </Label>
             </div>
           </div>

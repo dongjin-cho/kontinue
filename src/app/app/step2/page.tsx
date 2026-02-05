@@ -131,7 +131,7 @@ export default function Step2Page() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="text-red-800">기업가치 평가가 필요합니다</AlertTitle>
             <AlertDescription className="text-red-700">
-              상세 분석을 진행하려면 먼저 기업가치 평가를 완료해 주십시오.
+              매각 시뮬레이션을 진행하려면 먼저 기업가치 평가를 완료해 주십시오.
             </AlertDescription>
           </Alert>
           <div className="mt-4">
@@ -156,7 +156,7 @@ export default function Step2Page() {
             </Button>
           </Link>
           <div className="flex-1 text-center">
-            <span className="font-semibold text-slate-800">상세 분석</span>
+            <span className="font-semibold text-slate-800">매각 시뮬레이션</span>
           </div>
           <div className="w-20" />
         </div>

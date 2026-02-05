@@ -645,7 +645,7 @@ export function Step2UnifiedForm({
             ) : (
               <>
                 <Calculator className="mr-2 h-5 w-5" />
-                상세 분석 실행
+                매각 시뮬레이션 실행
               </>
             )}
           </Button>

@@ -9,7 +9,7 @@ interface StepProgressProps {
 
 const STEPS = [
   { number: 1, label: "기업가치 평가" },
-  { number: 2, label: "현금흐름 시뮬레이션" },
+  { number: 2, label: "매각 시뮬레이션" },
   { number: 3, label: "재무제표 분석" },
 ];
 

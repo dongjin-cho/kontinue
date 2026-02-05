@@ -237,7 +237,7 @@ export function ValuationResult({ result }: ValuationResultProps) {
               size="lg"
               className="w-full bg-white text-slate-800 hover:bg-slate-100 font-semibold"
             >
-              상세 분석 진행
+              매각 시뮬레이션 진행
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
