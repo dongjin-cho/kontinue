@@ -219,20 +219,13 @@ export function DealScenarioResults({ result, onSelectPreferred, selectedPreferr
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {scenario.explanation.slice(0, 60)}...
                   </p>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedScenario(expandedScenario === code ? null : code)}
-                      className="flex-1 text-xs py-1.5 px-2 rounded border border-slate-300 hover:bg-slate-100 text-slate-600"
-                    >
-                      {expandedScenario === code ? "접기" : "상세보기"}
-                    </button>
-                    {onSelectPreferred && (
+                  {onSelectPreferred && (
+                    <div className="mt-3">
                       <button
                         type="button"
                         onClick={() => onSelectPreferred(scenario)}
                         className={cn(
-                          "flex-1 text-xs py-1.5 px-2 rounded font-medium transition-colors",
+                          "w-full text-xs py-1.5 px-2 rounded font-medium transition-colors",
                           isSelected
                             ? "bg-emerald-500 text-white"
                             : "bg-slate-800 text-white hover:bg-slate-700"
@@ -240,8 +233,8 @@ export function DealScenarioResults({ result, onSelectPreferred, selectedPreferr
                       >
                         {isSelected ? "✓ 선택됨" : "선택"}
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
