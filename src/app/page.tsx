@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,8 +15,33 @@ import {
   TrendingUp,
   Lock,
 } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function HomePage() {
+  const router = useRouter();
+
+  // Magic Link로 홈페이지에 도착한 경우 Step3로 리다이렉트
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      // URL에 access_token이나 인증 관련 해시가 있는지 확인
+      const hash = window.location.hash;
+      const hasAuthParams = hash.includes("access_token") || hash.includes("token_type");
+      
+      if (hasAuthParams) {
+        const supabase = getSupabaseBrowserClient();
+        
+        // 세션 확인
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // 인증 성공 - Step3로 리다이렉트
+          router.replace("/app/step3");
+        }
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [router]);
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
