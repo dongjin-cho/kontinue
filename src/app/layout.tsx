@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FloatingChat } from "@/components/chat/FloatingChat";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { KakaoPixel } from "@/components/analytics/KakaoPixel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         <GoogleAnalytics />
+        <KakaoPixel />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
