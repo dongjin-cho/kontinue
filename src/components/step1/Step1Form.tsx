@@ -187,7 +187,15 @@ export function Step1Form({ onResult }: Step1FormProps) {
             input: formData,
             result: data.data,
           }),
-        }).catch((err) => console.warn("Failed to save run:", err));
+        })
+          .then(async (res) => {
+            const resData = await res.json();
+            console.log("[Step1] Save run response:", resData);
+            if (!resData.success) {
+              console.error("[Step1] Save run failed:", resData);
+            }
+          })
+          .catch((err) => console.error("[Step1] Failed to save run:", err));
       } else {
         // Handle API errors
         const apiErrors: Record<string, string> = {};

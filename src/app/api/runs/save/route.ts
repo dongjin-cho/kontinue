@@ -7,14 +7,28 @@ import { v4 as uuidv4 } from "uuid";
 const ANON_TOKEN_COOKIE = "anon_run_token";
 
 export async function POST(request: NextRequest) {
+  console.log("[runs/save] API called");
+  
   try {
     const body = await request.json();
     const { step, input, result } = body;
+    
+    console.log("[runs/save] Step:", step);
 
     if (!step || !["step1", "step2", "step2_cashflow", "step2_deal_scenarios"].includes(step)) {
+      console.log("[runs/save] Invalid step");
       return NextResponse.json(
         { success: false, error: "Invalid step" },
         { status: 400 }
+      );
+    }
+
+    // Service role key 확인
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("[runs/save] SUPABASE_SERVICE_ROLE_KEY is not set!");
+      return NextResponse.json(
+        { success: false, error: "Server configuration error" },
+        { status: 500 }
       );
     }
 
@@ -23,6 +37,8 @@ export async function POST(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    
+    console.log("[runs/save] User:", user?.id || "anonymous");
 
     // anon_token 가져오기 또는 생성
     const cookieStore = await cookies();
@@ -78,6 +94,8 @@ export async function POST(request: NextRequest) {
         company_name: input?.companyName || null,
       };
 
+      console.log("[runs/save] Inserting new run:", JSON.stringify(newRun, null, 2));
+      
       const { data: insertedRun, error: insertError } = await serviceClient
         .from("simulation_runs")
         .insert(newRun)
@@ -85,12 +103,15 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (insertError) {
-        console.error("Failed to insert run:", insertError);
+        console.error("[runs/save] Failed to insert run:", insertError);
+        console.error("[runs/save] Error details:", JSON.stringify(insertError, null, 2));
         return NextResponse.json(
-          { success: false, error: "Failed to save run" },
+          { success: false, error: "Failed to save run", details: insertError.message },
           { status: 500 }
         );
       }
+      
+      console.log("[runs/save] Successfully inserted run:", insertedRun?.id);
 
       runId = insertedRun.id;
 
@@ -152,9 +173,9 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error("Save run error:", error);
+    console.error("[runs/save] Unexpected error:", error);
     return NextResponse.json(
-      { success: false, error: "Server error" },
+      { success: false, error: "Server error", details: String(error) },
       { status: 500 }
     );
   }
